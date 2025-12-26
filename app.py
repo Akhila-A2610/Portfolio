@@ -52,7 +52,7 @@ def download_raw_file(owner: str, repo: str, path: str, branch: str = "main", to
 # ---------------------------
 def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     doc = Document(io.BytesIO(docx_bytes))
-    paragraphs = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
+    lines = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
 
     parsed = {
         "name": "",
@@ -60,53 +60,98 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
         "contact_line": "",
         "summary": "",
         "skills": "",
+        "publications": "",
         "experience": {},
         "certifications": [],
         "education": []
     }
 
-    # Basic header lines (you can keep your resume format like this)
-    if len(paragraphs) >= 1:
-        parsed["name"] = paragraphs[0]
-    if len(paragraphs) >= 2:
-        parsed["role"] = paragraphs[1]
-    if len(paragraphs) >= 3:
-        parsed["contact_line"] = paragraphs[2]
+    if not lines:
+        return parsed
+
+    # Header (based on your resume)
+    parsed["name"] = lines[0]
+    if len(lines) > 1:
+        parsed["contact_line"] = lines[1]
+
+    # Section detection
+    def is_heading(s: str) -> bool:
+        s_u = s.strip().upper()
+        return s_u in {
+            "PROFESSIONAL SUMMARY",
+            "TECHNICAL SKILLS",
+            "PUBLICATIONS",
+            "PROFESSIONAL EXPERIENCE",
+            "EDUCATION",
+            "CERTIFICATIONS & ACHIEVEMENTS",
+            "CERTIFICATIONS",
+            "ACHIEVEMENTS"
+        }
 
     section = None
-    current_company = None
+    current_job = None
 
-    for txt in paragraphs[3:]:
-        upper = txt.upper()
+    for s in lines[2:]:
+        s_u = s.upper().strip()
 
-        if upper.startswith("PROFESSIONAL SUMMARY"):
-            section = "summary"; continue
-        if upper.startswith("SKILLS"):
-            section = "skills"; continue
-        if upper.startswith("PROFESSIONAL EXPERIENCE"):
-            section = "experience"; continue
-        if upper.startswith("CERTIFICATIONS"):
-            section = "certifications"; continue
-        if upper.startswith("EDUCATION"):
-            section = "education"; continue
-
-        # Experience company marker
-        if section == "experience" and txt.startswith("Client:"):
-            current_company = txt.replace("Client:", "").strip()
-            parsed["experience"][current_company] = ""
+        # Map headings to sections
+        if s_u == "PROFESSIONAL SUMMARY":
+            section = "summary"
+            continue
+        if s_u == "TECHNICAL SKILLS":
+            section = "skills"
+            continue
+        if s_u == "PUBLICATIONS":
+            section = "publications"
+            continue
+        if s_u == "PROFESSIONAL EXPERIENCE":
+            section = "experience"
+            continue
+        if s_u == "EDUCATION":
+            section = "education"
+            continue
+        if s_u in {"CERTIFICATIONS & ACHIEVEMENTS", "CERTIFICATIONS", "ACHIEVEMENTS"}:
+            section = "certifications"
             continue
 
+        # Content parsing per section
         if section == "summary":
-            parsed["summary"] += txt + "\n"
+            parsed["summary"] += s + "\n"
+
         elif section == "skills":
-            parsed["skills"] += txt + "\n"
-        elif section == "experience":
-            if current_company:
-                parsed["experience"][current_company] += txt + "\n"
-        elif section == "certifications":
-            parsed["certifications"].append(txt)
+            # your skills section is a table-like structure in docx; we just collect text lines
+            parsed["skills"] += s + "\n"
+
+        elif section == "publications":
+            parsed["publications"] += s + "\n"
+
         elif section == "education":
-            parsed["education"].append(txt)
+            parsed["education"].append(s)
+
+        elif section == "certifications":
+            # strip leading bullet if present
+            parsed["certifications"].append(s.lstrip("•").strip())
+
+        elif section == "experience":
+            # Detect a new job line (your resume has: "Title, Company, Location  Jan 2024 – Dec 2025")
+            # Heuristic: contains a date dash like "–" or "-" with years
+            if re.search(r"\b(19|20)\d{2}\b", s) and ("–" in s or "-" in s):
+                current_job = s
+                parsed["experience"][current_job] = ""
+                continue
+
+            # Add bullet lines under the current job
+            if current_job:
+                parsed["experience"][current_job] += s.lstrip("•").strip() + "\n"
+
+    # Role fallback (optional)
+    # If you want a role on the header but it isn't explicitly in DOCX, infer from summary first line.
+    if not parsed["role"]:
+        first_summary_line = parsed["summary"].strip().split("\n")[0] if parsed["summary"].strip() else ""
+        if "Senior" in first_summary_line or "Engineer" in first_summary_line or "Scientist" in first_summary_line:
+            parsed["role"] = "Senior Data Engineer | Data Scientist"
+        else:
+            parsed["role"] = "Data Engineer | Data Scientist"
 
     return parsed
 
