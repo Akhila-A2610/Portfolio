@@ -1,0 +1,25 @@
+{
+  "last_updated": "2025-12-26T11:30:00Z",
+  "content": {
+    "name": "AKHILA A",
+    "role": "Senior Data Engineer | Data Scientist",
+    "contact_line": "akhilaa2610@gmail.com | (435)-261-7650 | LinkedIn | GitHub",
+    "summary": "Senior Data Engineer and Data Scientist with 6.5 years of experience building scalable data pipelines, cloud-native analytics platforms, and machine learning solutions across enterprise environments. Proven expertise in Azure data engineering, distributed processing with Spark, statistical modeling, and time-series forecasting, with peer-reviewed research publications. Hands-on experience developing AI-powered applications using RAG pipelines and large language models (LLMs), including production-oriented chatbots that integrate structured and unstructured data. Strong ability to translate ambiguous business problems into production-ready data systems and analytical insights.",
+    "experience": {
+      "Utah State University": "Role: Graduate Data Scientist\nDescription: Conducted applied data science and machine learning research focused on real-world modeling problems and scalable analytics.\nKey Contributions:\n Investigated complex data modeling problems using robust preprocessing, feature engineering, and model validation techniques.\n Applied statistical analysis and predictive modeling to evaluate system performance under varying conditions.\n Built an end-to-end time-series forecasting pipeline for S&P 500 prediction using Random Forest and LSTM models.\n Designed transaction-level association rule mining pipelines using the Apriori algorithm for recommendation systems.\n Developed and optimized neural network–based image classification pipelines for mammography data, achieving 82% recall for the positive class.\n Engineered API-driven data ingestion workflows processing 10,000+ TMDB records and applied ANOVA and t-tests for ROI analysis.\nTechnical Stack: Python, SQL, Pandas, NumPy, Scikit-learn, TensorFlow, PyTorch, Statsmodels, Random Forest, LSTM, Apriori, REST APIs, Time Series Analysis, Statistical Modeling.",
+      "LTIMindtree": "Role: Senior Data Engineer\nDescription: Designed and optimized cloud-scale data engineering solutions on Microsoft Azure.\nKey Contributions:\n Managed and optimized Azure Databricks clusters and workspaces for performance and cost efficiency.\n Built scalable data workflows using PySpark and Azure Data Lake.\n Diagnosed and resolved Spark job performance bottlenecks, reducing execution times by up to 30%.\n Implemented role-based access control (RBAC) and secure networking using VNets and Private Endpoints.\n Collaborated in Agile teams to gather requirements and deliver production-grade analytics solutions.\nTechnical Stack: Azure Databricks, PySpark, Azure Data Lake, RBAC, VNets, Spark Optimization, Agile.",
+      "Tata Consultancy Services": "Role: Azure Data Engineer\nDescription: Delivered large-scale ETL and analytics solutions for enterprise billing and analytics systems.\nKey Contributions:\n Built Azure Data Factory pipelines ingesting over 1M daily records into Azure Data Lake.\n Developed and optimized PySpark pipelines in Azure Databricks, reducing processing time by 35%.\n Designed Power BI dashboards integrated with Azure Data Lake, improving billing analytics efficiency by 10%.\n Integrated on-premises billing systems with cloud-based network logs using standardized schemas.\n Collaborated with business stakeholders to enable data-driven decision-making.\nTechnical Stack: Azure Data Factory, Azure Databricks, PySpark, Power BI, Azure Data Lake, SQL, ETL."
+    },
+    "certifications": [
+      "Databricks Generative AI Fundamentals",
+      "Databricks Lakehouse Fundamentals",
+      "Microsoft Certified: Azure Data Fundamentals",
+      "Azure Databricks Specialist",
+      "Data Science Stackable Credentials Scholarship – Utah State University"
+    ],
+    "education": [
+      "Master of Science in Computer Science – Utah State University, Logan, UT, USA (GPA: 4.0/4.0)",
+      "Bachelor of Technology – Jawaharlal Nehru Technological University Hyderabad (JNTUH), Hyderabad, India (GPA: 3.8/4.0)"
+    ]
+  }
+}
