@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 # CONFIG - CHANGE THESE
 # ---------------------------
 GITHUB_OWNER = "Akhila-A2610"          # <-- your GitHub username
-GITHUB_REPO = "Portifolio"            # <-- your repo name
+GITHUB_REPO = "Portfolio"            # <-- your repo name
 RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"  # <-- your resume docx inside repo
 BRANCH = "main"
 JSON_CACHE = "resume_cache.json"      # safer name than resume_data.json
