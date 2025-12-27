@@ -363,12 +363,11 @@ def card(title: str, body_html: str):
 def main():
     css()
 
-    # Refresh button (clear cache)
-    col1, col2 = st.columns([1, 6])
+    # Refresh button (clear cache) — put it in sidebar
     with st.sidebar:
-    if st.button("🔄 Refresh / Clear cache"):
-        st.cache_data.clear()
-        st.rerun()
+        if st.button("🔄 Refresh / Clear cache"):
+            st.cache_data.clear()
+            st.rerun()
 
     token = None
     try:
@@ -377,7 +376,9 @@ def main():
         token = None
 
     with st.spinner("Loading resume from GitHub..."):
-        resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token)
+        resume = load_resume_from_github(
+            GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token
+        )
 
     # Profile image
     profile_img_b64 = None
@@ -387,7 +388,9 @@ def main():
 
     linkedin_url = "https://www.linkedin.com/in/akhilaakkala/"
     github_url = f"https://github.com/{GITHUB_OWNER}"
-    contact_html = make_hyperlinked_contact(resume.get("contact_line", ""), linkedin_url, github_url)
+    contact_html = make_hyperlinked_contact(
+        resume.get("contact_line", ""), linkedin_url, github_url
+    )
 
     render_sticky_header(
         name=resume.get("name", "Akhila A"),
@@ -409,7 +412,10 @@ def main():
     section_anchor("skills")
     skills = resume.get("skills", {}) or {}
     if isinstance(skills, dict) and skills:
-        st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>",
+            unsafe_allow_html=True
+        )
         for cat, val in skills.items():
             items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
             chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
@@ -422,7 +428,10 @@ def main():
 
     # EXPERIENCE
     section_anchor("experience")
-    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'></div></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'></div></div>",
+        unsafe_allow_html=True
+    )
 
     exp = resume.get("experience", {}) or {}
     if exp:
@@ -471,7 +480,6 @@ def main():
         card("About This Page", about_txt.replace("\n", "<br>"))
     else:
         card("About This Page", "aboutpage.txt not found in your GitHub repo root.")
-
 
 if __name__ == "__main__":
     main()
