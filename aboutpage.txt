@@ -1,0 +1,1 @@
+This is my interactive portfolio and résumé built with Streamlit. It pulls live content from my GitHub repository so updates to my resume and project details reflect quickly on the website. The goal is to keep the layout simple, readable, and easy to maintain while showcasing my work and publications.

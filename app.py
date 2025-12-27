@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 # CONFIG - CHANGE THESE
 # ---------------------------
 GITHUB_OWNER = "Akhila-A2610"          # <-- your GitHub username
-GITHUB_REPO = "Portfolio"            # <-- your repo name
+GITHUB_REPO = "portfolio"            # <-- your repo name
 RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"  # <-- your resume docx inside repo
 BRANCH = "main"
 JSON_CACHE = "resume_cache.json"      # safer name than resume_data.json
@@ -53,6 +53,17 @@ def download_raw_file(owner: str, repo: str, path: str, branch: str = "main", to
 def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     doc = Document(io.BytesIO(docx_bytes))
     lines = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
+    # --- ALSO read table content (for skills tables) ---
+    table_lines = []
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                t = cell.text.strip()
+                if t:
+                    table_lines.append(t)
+
+    lines = lines + table_lines
+
 
     parsed = {
         "name": "",
@@ -361,7 +372,7 @@ def main():
             profile_img_b64 = base64.b64encode(img_file.read()).decode()
 
     # Links
-    linkedin_url = "https://www.linkedin.com/in/<your-linkedin>/"  # <-- change
+    linkedin_url = "https://www.linkedin.com/in/akhilaakkala/"  # <-- change
     github_url = f"https://github.com/{GITHUB_OWNER}"
     contact_html = make_hyperlinked_contact(resume.get("contact_line",""), linkedin_url, github_url)
 
