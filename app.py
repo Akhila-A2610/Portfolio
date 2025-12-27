@@ -308,31 +308,33 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     if profile_img_b64:
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
-    st.markdown(f"""
-    <div class="sticky">
-      <div class="header-row">
-        <div class="id-row">
-          {avatar_html}
-          <div>
-            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
-            <div style="margin-top:6px;font-size:15px;">{contact_html}</div>
-          </div>
-        </div>
-
-        <div class="nav">
-          <a href="#summary">Summary</a>
-          <a href="#experience">Work Experience</a>
-          <a href="#certs">Certifications</a>
-          <a href="#publications">Publication</a>
-          <a href="#projects">Projects</a>
-          <a href="#education">Education</a>
-          <a href="#about">About This Page</a>
-        </div>
+    html = f"""
+<div class="sticky">
+  <div class="header-row">
+    <div class="id-row">
+      {avatar_html}
+      <div>
+        <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
+        <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
+        <div class="contact" style="margin-top:6px;font-size:15px;">{contact_html}</div>
       </div>
     </div>
-    <div class="spacer"></div>
-    """, unsafe_allow_html=True)
+
+    <div class="nav">
+      <a href="#summary">Summary</a>
+      <a href="#experience">Work Experience</a>
+      <a href="#certs">Certifications</a>
+      <a href="#publications">Publication</a>
+      <a href="#projects">Projects</a>
+      <a href="#education">Education</a>
+      <a href="#about">About This Page</a>
+    </div>
+  </div>
+</div>
+<div class="spacer"></div>
+"""
+    st.markdown(html, unsafe_allow_html=True)
+
 
 
 
