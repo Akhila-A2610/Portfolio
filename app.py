@@ -52,118 +52,153 @@ def download_raw_file(owner: str, repo: str, path: str, branch: str = "main", to
 # ---------------------------
 def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     doc = Document(io.BytesIO(docx_bytes))
-    lines = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
-    # --- ALSO read table content (for skills tables) ---
-    table_lines = []
+
+    # --- Collect paragraph lines (non-empty) ---
+    para_lines = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
+
+    # --- Collect table text (your "Technical Skills" is a table) ---
+    # We will build a dict: {category: "comma separated skills"}
+    skills_table: Dict[str, str] = {}
     for table in doc.tables:
         for row in table.rows:
-            for cell in row.cells:
-                t = cell.text.strip()
-                if t:
-                    table_lines.append(t)
+            cells = [c.text.strip() for c in row.cells]
+            if len(cells) >= 2:
+                left = cells[0].strip()
+                right = cells[1].strip()
+                if not left or not right:
+                    continue
+                # Skip header row like Category | Skills
+                if left.lower() == "category" and right.lower().startswith("skil"):
+                    continue
+                skills_table[left] = right
 
-    lines = lines + table_lines
-
-
-    parsed = {
+    parsed: Dict[str, Any] = {
         "name": "",
-        "role": "",
+        "role": "Senior Data Engineer | Data Scientist",  # resume doesn't explicitly have a role line; set a default
         "contact_line": "",
         "summary": "",
-        "skills": "",
-        "publications": "",
-        "experience": {},
-        "certifications": [],
-        "education": []
+        "skills": skills_table,          # NOTE: now a dict (category -> skills string)
+        "publications": [],
+        "experience": {},                # dict(job_header -> list of bullets)
+        "education": [],
+        "certifications": []
     }
 
-    if not lines:
+    if not para_lines:
         return parsed
 
-    # Header (based on your resume)
-    parsed["name"] = lines[0]
-    if len(lines) > 1:
-        parsed["contact_line"] = lines[1]
+    # Header (matches your resume: name line then contact line)
+    parsed["name"] = para_lines[0]
+    if len(para_lines) > 1:
+        parsed["contact_line"] = para_lines[1]
 
-    # Section detection
-    def is_heading(s: str) -> bool:
-        s_u = s.strip().upper()
-        return s_u in {
-            "PROFESSIONAL SUMMARY",
-            "TECHNICAL SKILLS",
-            "PUBLICATIONS",
-            "PROFESSIONAL EXPERIENCE",
-            "EDUCATION",
-            "CERTIFICATIONS & ACHIEVEMENTS",
-            "CERTIFICATIONS",
-            "ACHIEVEMENTS"
-        }
+    # Normalize bullets
+    def clean_bullet(s: str) -> str:
+        return s.replace("•", "").strip()
+
+    # Section recognition (matches your resume headings)
+    HEADINGS = {
+        "PROFESSIONAL SUMMARY": "summary",
+        "TECHNICAL SKILLS": "skills",
+        "PUBLICATIONS": "publications",
+        "PROFESSIONAL EXPERIENCE": "experience",
+        "EDUCATION": "education",
+        "CERTIFICATIONS & ACHIEVEMENTS": "certifications",
+    }
 
     section = None
     current_job = None
 
-    for s in lines[2:]:
+    # Job header pattern:
+    # Examples in your resume:
+    # "Graduate Data Scientist, Utah State University, Logan, UT, USA  Jan 2024 – Dec 2025"
+    job_header_re = re.compile(
+        r""".+,\s*.+\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}\s*[–-]\s*
+            (Present|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}""",
+        re.IGNORECASE | re.VERBOSE
+    )
+
+    i = 2  # start after name + contact
+    while i < len(para_lines):
+        s = para_lines[i]
         s_u = s.upper().strip()
 
-        # Map headings to sections
-        if s_u == "PROFESSIONAL SUMMARY":
-            section = "summary"
-            continue
-        if s_u == "TECHNICAL SKILLS":
-            section = "skills"
-            continue
-        if s_u == "PUBLICATIONS":
-            section = "publications"
-            continue
-        if s_u == "PROFESSIONAL EXPERIENCE":
-            section = "experience"
-            continue
-        if s_u == "EDUCATION":
-            section = "education"
-            continue
-        if s_u in {"CERTIFICATIONS & ACHIEVEMENTS", "CERTIFICATIONS", "ACHIEVEMENTS"}:
-            section = "certifications"
+        # Switch section
+        if s_u in HEADINGS:
+            section = HEADINGS[s_u]
+            current_job = None
+            i += 1
             continue
 
-        # Content parsing per section
+        # --- PROFESSIONAL SUMMARY ---
         if section == "summary":
-            parsed["summary"] += s + "\n"
+            # Your summary is a paragraph block (not bullets) :contentReference[oaicite:1]{index=1}
+            parsed["summary"] += (s + "\n")
+            i += 1
+            continue
 
-        elif section == "skills":
-            # your skills section is a table-like structure in docx; we just collect text lines
-            parsed["skills"] += s + "\n"
+        # --- PUBLICATIONS ---
+        if section == "publications":
+            # Publications are bullet lines starting with • :contentReference[oaicite:2]{index=2}
+            if s.strip().startswith("•"):
+                parsed["publications"].append(clean_bullet(s))
+            else:
+                # if a publication wraps, append to last one
+                if parsed["publications"]:
+                    parsed["publications"][-1] += " " + s.strip()
+                else:
+                    parsed["publications"].append(s.strip())
+            i += 1
+            continue
 
-        elif section == "publications":
-            parsed["publications"] += s + "\n"
-
-        elif section == "education":
-            parsed["education"].append(s)
-
-        elif section == "certifications":
-            # strip leading bullet if present
-            parsed["certifications"].append(s.lstrip("•").strip())
-
-        elif section == "experience":
-            # Detect a new job line (your resume has: "Title, Company, Location  Jan 2024 – Dec 2025")
-            # Heuristic: contains a date dash like "–" or "-" with years
-            if re.search(r"\b(19|20)\d{2}\b", s) and ("–" in s or "-" in s):
-                current_job = s
-                parsed["experience"][current_job] = ""
+        # --- EXPERIENCE ---
+        if section == "experience":
+            # Detect job header line
+            if job_header_re.search(s) and "•" not in s:
+                current_job = s.strip()
+                parsed["experience"][current_job] = []
+                i += 1
                 continue
 
-            # Add bullet lines under the current job
-            if current_job:
-                parsed["experience"][current_job] += s.lstrip("•").strip() + "\n"
+            # Bullet under current job
+            if current_job and s.strip().startswith("•"):
+                parsed["experience"][current_job].append(clean_bullet(s))
+                i += 1
+                continue
 
-    # Role fallback (optional)
-    # If you want a role on the header but it isn't explicitly in DOCX, infer from summary first line.
-    if not parsed["role"]:
-        first_summary_line = parsed["summary"].strip().split("\n")[0] if parsed["summary"].strip() else ""
-        if "Senior" in first_summary_line or "Engineer" in first_summary_line or "Scientist" in first_summary_line:
-            parsed["role"] = "Senior Data Engineer | Data Scientist"
-        else:
-            parsed["role"] = "Data Engineer | Data Scientist"
+            # Handle wrapped lines under a bullet
+            if current_job and parsed["experience"][current_job]:
+                parsed["experience"][current_job][-1] += " " + s.strip()
+                i += 1
+                continue
 
+            i += 1
+            continue
+
+        # --- EDUCATION ---
+        if section == "education":
+            # Education lines are plain text lines :contentReference[oaicite:3]{index=3}
+            parsed["education"].append(s.strip())
+            i += 1
+            continue
+
+        # --- CERTIFICATIONS ---
+        if section == "certifications":
+            if s.strip().startswith("•"):
+                parsed["certifications"].append(clean_bullet(s))
+            else:
+                if parsed["certifications"]:
+                    parsed["certifications"][-1] += " " + s.strip()
+                else:
+                    parsed["certifications"].append(s.strip())
+            i += 1
+            continue
+
+        # If not inside a recognized section, just move on
+        i += 1
+
+    # Clean summary
+    parsed["summary"] = parsed["summary"].strip()
     return parsed
 
 # ---------------------------
@@ -395,27 +430,37 @@ def main():
 
     # SKILLS (display as chips)
     section_anchor("skills")
-    skills_text = (resume.get("skills","") or "").strip()
-    if skills_text:
-        # split by commas and newlines, keep it simple
-        raw = re.split(r"[,\n]+", skills_text)
-        skills = [s.strip() for s in raw if s.strip() and len(s.strip()) < 60]
-        chips = " ".join([f"<span class='chip'>{s}</span>" for s in skills[:60]])
-        st.markdown(f"<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div>{chips}</div>", unsafe_allow_html=True)
+    skills = resume.get("skills", {}) or {}
+
+    if isinstance(skills, dict) and skills:
+        st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>", unsafe_allow_html=True)
+        for cat, val in skills.items():
+        # split the skills string into chips
+            items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
+            chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
+            st.markdown(
+                f"<div class='card'><div style='font-weight:800;margin-bottom:8px;'>{cat}</div>{chips}</div>",
+                unsafe_allow_html=True
+            )
     else:
-        card("Skills", "Add **Technical Skills** content in your DOCX.")
+        card("Skills", "Could not read skills table from the DOCX.")
+
 
     # EXPERIENCE
     section_anchor("experience")
     st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div></div>", unsafe_allow_html=True)
+
     exp = resume.get("experience", {}) or {}
     if exp:
-        for job_title_line, details in exp.items():
-            with st.expander(job_title_line, expanded=False):
-                lines = [l.strip() for l in (details or "").split("\n") if l.strip()]
-                st.markdown("\n".join([f"- {l}" for l in lines]))
+        for job_header, bullets in exp.items():
+            with st.expander(job_header, expanded=False):
+                if bullets:
+                    st.markdown("\n".join([f"- {b}" for b in bullets]))
+                else:
+                    st.write("No bullets found for this role.")
     else:
-        st.info("No experience parsed yet — make sure your DOCX has a **Professional Experience** heading and job lines with dates.")
+        st.info("No experience parsed yet — ensure the resume has 'Professional Experience' and bullets.")
+
 
     # PUBLICATIONS
     section_anchor("publications")
