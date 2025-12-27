@@ -413,7 +413,7 @@ def main():
 
     # EXPERIENCE
     section_anchor("experience")
-    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'>Click a role to view details.</div></div>", unsafe_allow_html=True)
+    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'></div></div>", unsafe_allow_html=True)
 
     exp = resume.get("experience", {}) or {}
     if exp:
