@@ -426,7 +426,7 @@ def main():
         with open(PROFILE_IMG, "rb") as img_file:
             profile_img_b64 = base64.b64encode(img_file.read()).decode()
 
-    linkedin_url = "https://www.linkedin.com/in/{LINKEDIN_USER}/"
+    linkedin_url = f"https://www.linkedin.com/in/{LINKEDIN_USER}/"
     github_url = f"https://github.com/{GITHUB_OWNER}"
     contact_html = make_hyperlinked_contact(resume.get("contact_line", ""), linkedin_url, github_url)
 
