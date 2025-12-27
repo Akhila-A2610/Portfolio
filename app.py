@@ -20,6 +20,11 @@ BRANCH = "main"
 
 # Optional local asset (stored in repo)
 PROFILE_IMG = "assets/profile.jpg"
+COMPANY_LOGOS = {
+    "Utah State University": "assets/company_logos/usu.jfif",
+    "LTIMindtree": "assets/company_logos/ltimindtree.png",
+    "Tata Consultancy Services (TCS)": "assets/company_logos/tcs.jfif"
+}
 
 
 # ---------------------------
@@ -188,6 +193,65 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
 
     parsed["summary"] = parsed["summary"].strip()
     return parsed
+
+#----------------------------
+# Company logos
+#----------------------------
+def pick_company_key(job_header: str, logo_map: Dict[str, str]) -> Optional[str]:
+    """Return the first logo_map key that appears inside job_header (case-insensitive)."""
+    j = job_header.lower()
+    for k in logo_map.keys():
+        if k.lower() in j:
+            return k
+    return None
+
+
+def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str, str]):
+    """
+    Shows company logos as clickable cards/buttons.
+    Clicking one shows that job's bullets in an expander area.
+    """
+    if "selected_job" not in st.session_state:
+        st.session_state["selected_job"] = None
+
+    job_headers = list(experience.keys())
+    if not job_headers:
+        st.info("No experience parsed.")
+        return
+
+    # Build "company groups" (optional): pick the company key for each job header
+    items = []
+    for jh in job_headers:
+        ck = pick_company_key(jh, logo_map)
+        logo_path = logo_map.get(ck) if ck else None
+        items.append((jh, ck, logo_path))
+
+    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;'>Work Experience</div><div class='muted'>Click a company to view details.</div></div>", unsafe_allow_html=True)
+
+    # show logos in a row (responsive-ish)
+    cols = st.columns(min(4, len(items)))
+    for idx, (job_header, company_key, logo_path) in enumerate(items):
+        with cols[idx % len(cols)]:
+            if logo_path and os.path.exists(logo_path):
+                st.image(logo_path, width=90)
+
+            # Button label: company name if found, else shorten header
+            label = company_key if company_key else job_header[:28] + ("..." if len(job_header) > 28 else "")
+            if st.button(label, key=f"job_btn_{idx}"):
+                st.session_state["selected_job"] = job_header
+
+    # Show selected job details
+    selected = st.session_state.get("selected_job")
+    if selected:
+        bullets = experience.get(selected, [])
+        with st.expander(selected, expanded=True):
+            if bullets:
+                st.markdown("\n".join([f"- {b}" for b in bullets]))
+            else:
+                st.write("No bullet points found.")
+            if st.button("Close", key="close_job"):
+                st.session_state["selected_job"] = None
+
 
 
 # ---------------------------
@@ -370,7 +434,7 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
         f'    </div>'
         f'    <div class="nav">'
         f'      <a href="#summary">Summary</a>'
-        f'      <a href="#skills">Skills</a>'
+        #f'      <a href="#skills">Skills</a>'
         f'      <a href="#experience">Work Experience</a>'
         f'      <a href="#certs">Certifications</a>'
         f'      <a href="#publications">Publications</a>'
@@ -450,39 +514,28 @@ def main():
         card("Professional Summary", "No summary found in the resume.")
 
     # SKILLS
-    section_anchor("skills")
-    skills = resume.get("skills", {}) or {}
-    if isinstance(skills, dict) and skills:
-        st.markdown(
-            "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>",
-            unsafe_allow_html=True,
-        )
-        for cat, val in skills.items():
-            items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
-            chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
-            st.markdown(
-                f"<div class='card'><div style='font-weight:800;margin-bottom:8px;'>{cat}</div>{chips}</div>",
-                unsafe_allow_html=True,
-            )
-    else:
-        card("Skills", "Could not read skills table from the DOCX.")
+    #section_anchor("skills")
+    #skills = resume.get("skills", {}) or {}
+    #if isinstance(skills, dict) and skills:
+    #   st.markdown(
+    #       "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>",
+    #        unsafe_allow_html=True,
+    #    )
+    #    for cat, val in skills.items():
+    #        items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
+    #        chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
+    #        st.markdown(
+    #           f"<div class='card'><div style='font-weight:800;margin-bottom:8px;'>{cat}</div>{chips}</div>",
+    #            unsafe_allow_html=True,
+    #       )
+    #else:
+    #   card("Skills", "Could not read skills table from the DOCX.")
 
-    # EXPERIENCE
+    # EXPERIENCE (logo-click)
     section_anchor("experience")
-    st.markdown(
-        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'>Click a role to view details.</div></div>",
-        unsafe_allow_html=True,
-    )
     exp = resume.get("experience", {}) or {}
-    if exp:
-        for job_header, bullets in exp.items():
-            with st.expander(job_header, expanded=False):
-                if bullets:
-                    st.markdown("\n".join([f"- {b}" for b in bullets]))
-                else:
-                    st.write("No bullet points found for this role.")
-    else:
-        st.info("No experience parsed yet. Make sure bullets start with • in the DOCX.")
+    render_work_experience_clickable(exp, COMPANY_LOGOS)
+
 
     # PUBLICATIONS
     section_anchor("publications")
