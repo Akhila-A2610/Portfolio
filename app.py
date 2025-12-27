@@ -608,29 +608,28 @@ def main():
 
 
 
+    # EDUCATION (with logos)
+    section_anchor("education")
+    edu_list = resume.get("education", []) or []
 
-# EDUCATION (with logos)
-section_anchor("education")
-edu_list = resume.get("education", []) or []
+    if edu_list:
+        st.markdown(
+            "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Education</div></div>",
+            unsafe_allow_html=True
+        )
 
-if edu_list:
-    st.markdown(
-        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Education</div></div>",
-        unsafe_allow_html=True
-    )
+        for edu in edu_list:
+            c1, c2 = st.columns([1, 6], vertical_alignment="center")
 
-    for edu in edu_list:
-        c1, c2 = st.columns([1, 6], vertical_alignment="center")
+            with c1:
+                logo_path = pick_edu_logo(edu, EDU_LOGOS)
+                if logo_path and os.path.exists(logo_path):
+                    st.image(logo_path, width=110)
 
-        with c1:
-            logo_path = pick_edu_logo(edu, EDU_LOGOS)
-            if logo_path and os.path.exists(logo_path):
-                st.image(logo_path, width=110)
-
-        with c2:
-            st.markdown(f"- {edu}")
-else:
-    card("Education", "No education found.")
+            with c2:
+                st.markdown(f"- {edu}")
+    else:
+        card("Education", "No education found.")
 
 
     # PROJECTS
