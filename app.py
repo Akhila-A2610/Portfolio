@@ -491,12 +491,6 @@ def main():
     else:
         card("About This Page", "aboutpage.txt not found in your GitHub repo root.")
 
-    # Debug (optional; keep for now, remove later)
-    with st.expander("🛠 Debug (parsed resume)", expanded=False):
-        st.json(resume)
-        st.write("Resume raw URL:")
-        st.code(f"https://raw.githubusercontent.com/{GITHUB_OWNER}/{GITHUB_REPO}/{BRANCH}/{RESUME_PATH_IN_REPO}")
-
 
 if __name__ == "__main__":
     main()
