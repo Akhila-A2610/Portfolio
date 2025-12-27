@@ -67,7 +67,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 right = cells[1].strip()
                 if not left or not right:
                     continue
-                # Skip header row like "Category | Skils/Skills"
+                # Skip header row like "Category | Skills"
                 if left.lower() == "category" and right.lower().startswith("skil"):
                     continue
                 skills_table[left] = right
@@ -81,7 +81,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
         "publications": [],
         "experience": {},
         "education": [],
-        "certifications": []
+        "certifications": [],
     }
 
     if not para_lines:
@@ -120,7 +120,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
             |January|February|March|April|May|June|July|August|September|October|November|December)
             \s+\d{4})
         """,
-        re.IGNORECASE | re.VERBOSE
+        re.IGNORECASE | re.VERBOSE,
     )
 
     i = 2
@@ -197,7 +197,9 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
 # ---------------------------
 # Projects loader (projects.docx in repo root)
 # ---------------------------
-def load_projects_from_github(owner: str, repo: str, branch: str = "main", token: Optional[str] = None) -> str:
+def load_projects_from_github(
+    owner: str, repo: str, branch: str = "main", token: Optional[str] = None
+) -> str:
     projects_path = "projects.docx"
     content_bytes = download_raw_file(owner, repo, projects_path, branch, token)
     if not content_bytes:
@@ -212,7 +214,9 @@ def load_projects_from_github(owner: str, repo: str, branch: str = "main", token
 # Load resume from GitHub (Streamlit cache)
 # ---------------------------
 @st.cache_data(show_spinner=False)
-def load_resume_from_github(owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None) -> Dict[str, Any]:
+def load_resume_from_github(
+    owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None
+) -> Dict[str, Any]:
     content_bytes = download_raw_file(owner, repo, path, branch, token)
     if content_bytes is None:
         raise RuntimeError("Could not download resume file from GitHub (check file name/path).")
@@ -226,28 +230,25 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
     if not contact_text:
         return ""
 
-    # email
-    email_pattern = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
+    email_pattern = re.compile(r"[\w\.-]+@[\w\.-]+\.\w+")
     contact_text = email_pattern.sub(
         lambda m: f'<a href="mailto:{m.group(0)}" style="color:#87CEFA;text-decoration:none;">{m.group(0)}</a>',
-        contact_text
+        contact_text,
     )
 
-    # LinkedIn and GitHub keyword replacement
     contact_text = re.sub(
-        r'\bLinkedIn\b',
+        r"\bLinkedIn\b",
         f'<a href="{linkedin_url}" target="_blank" style="color:#87CEFA;text-decoration:none;">LinkedIn</a>',
         contact_text,
-        flags=re.IGNORECASE
+        flags=re.IGNORECASE,
     )
     contact_text = re.sub(
-        r'\bGitHub\b',
+        r"\bGitHub\b",
         f'<a href="{github_url}" target="_blank" style="color:#87CEFA;text-decoration:none;">GitHub</a>',
         contact_text,
-        flags=re.IGNORECASE
+        flags=re.IGNORECASE,
     )
 
-    # normalize separators
     contact_text = contact_text.replace("|", "&nbsp;|&nbsp;")
     return contact_text
 
@@ -256,99 +257,124 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 # UI helpers
 # ---------------------------
 def css():
-    st.markdown("""
-    <style>
-      /* remove Streamlit default top space + hide chrome */
-      section.main > div { padding-top: 0rem !important; }
-      header { visibility: hidden; }
-      footer { visibility: hidden; }
+    st.markdown(
+        """
+<style>
+  /* ---- REMOVE STREAMLIT DEFAULT TOP SPACE / CHROME ---- */
+  header { visibility: hidden; height: 0px; }
+  footer { visibility: hidden; height: 0px; }
 
-      /* IMPORTANT: if HTML accidentally renders as code, hide the code blocks */
-      pre, code { display: none !important; }
+  /* remove default paddings (this fixes the blank space at top) */
+  section.main > div { padding-top: 0rem !important; }
+  div.block-container { padding-top: 0rem !important; }
 
-      .stApp { background-color: #0b0f19; color: white; }
-      .muted { color: #b9c0d4; }
+  /* ---- THEME ---- */
+  .stApp { background-color: #0b0f19; color: white; }
+  .muted { color: #b9c0d4; }
 
-      .sticky {
-        position: fixed;
-        top: 0; left: 0; width: 100%;
-        background: rgba(11,15,25,0.92);
-        backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        z-index: 999;
-        padding: 14px 18px;
-      }
+  /* ---- STICKY HEADER ---- */
+  .sticky {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(11,15,25,0.96);
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid rgba(135,206,250,0.75);
+    z-index: 9999;
+    padding: 14px 18px;
+  }
 
-      .header-row {
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap: 18px;
-        max-width: 1200px;
-        margin: 0 auto;
-      }
+  .header-row {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 18px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
 
-      .id-row { display:flex; align-items:center; gap:14px; }
+  .id-row {
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-width: 360px;
+  }
 
-      .nav {
-        display:flex;
-        flex-wrap:wrap;
-        gap:10px;
-        justify-content:flex-end;
-        padding-top:6px;
-        max-width:520px;
-      }
+  .avatar {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(135,206,250,0.75);
+  }
 
-      .nav a {
-        display:inline-block;
-        background:#11a9c0;
-        color:white !important;
-        text-decoration:none !important;
-        padding:10px 16px;
-        border-radius:8px;
-        font-weight:800;
-        font-size:14px;
-        line-height:1;
-        white-space:nowrap;
-      }
-      .nav a:hover { background:#02839a; }
+  .nav {
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:flex-end;
+    padding-top:6px;
+    max-width:560px;
+  }
 
-      .spacer { height: 150px; }
-      a[id] { scroll-margin-top: 165px; }
+  .nav a {
+    display:inline-block;
+    background:#11a9c0;
+    color:white !important;
+    text-decoration:none !important;
+    padding:10px 14px;
+    border-radius:8px;
+    font-weight:800;
+    font-size:14px;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .nav a:hover { background:#02839a; }
 
-      .card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 18px;
-        padding: 18px 18px;
-        margin: 12px 0;
-      }
-      .chip {
-        display:inline-block;
-        padding: 6px 10px;
-        border-radius: 999px;
-        background: rgba(135,206,250,0.12);
-        border: 1px solid rgba(135,206,250,0.25);
-        margin: 4px 6px 0 0;
-        font-size: 13px;
-      }
-    </style>
-    """, unsafe_allow_html=True)
+  /* push content below sticky header */
+  .spacer { height: 155px; }
+
+  /* make anchors not hide behind sticky header */
+  a[id] { scroll-margin-top: 175px; }
+
+  /* ---- CARDS ---- */
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px;
+    padding: 18px 18px;
+    margin: 12px 0;
+  }
+
+  .chip {
+    display:inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(135,206,250,0.12);
+    border: 1px solid rgba(135,206,250,0.25);
+    margin: 4px 6px 0 0;
+    font-size: 13px;
+  }
+</style>
+""",
+        unsafe_allow_html=True,
+    )
 
 
-def render_sticky_header(name, role, contact_html, profile_img_b64=None):
+def render_sticky_header(name: str, role: str, contact_html: str, profile_img_b64: Optional[str] = None):
     avatar_html = ""
     if profile_img_b64:
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
-    html = f"""
-<div class="sticky">
+    # IMPORTANT: keep HTML left-aligned (no leading indentation) so it never renders as code.
+    html = f"""<div class="sticky">
   <div class="header-row">
     <div class="id-row">
       {avatar_html}
       <div>
         <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-        <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
+        <div style="font-size:22px;font-weight:900;color:limegreen;line-height:1.15;">{role}</div>
         <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
       </div>
     </div>
@@ -365,10 +391,8 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     </div>
   </div>
 </div>
-<div class="spacer"></div>
-"""
+<div class="spacer"></div>"""
     st.markdown(html, unsafe_allow_html=True)
-
 
 
 def section_anchor(anchor_id: str):
@@ -376,12 +400,15 @@ def section_anchor(anchor_id: str):
 
 
 def card(title: str, body_html: str):
-    st.markdown(f"""
-    <div class="card">
-      <div style="font-size:20px;font-weight:800;margin-bottom:8px;">{title}</div>
-      <div class="muted" style="font-size:15px;line-height:1.6;">{body_html}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+<div class="card">
+  <div style="font-size:20px;font-weight:800;margin-bottom:8px;">{title}</div>
+  <div class="muted" style="font-size:15px;line-height:1.6;">{body_html}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------
@@ -418,15 +445,14 @@ def main():
         name=resume.get("name", "Akhila A"),
         role=resume.get("role", "Senior Data Engineer | Data Scientist"),
         contact_html=contact_html,
-        profile_img_b64=profile_img_b64
+        profile_img_b64=profile_img_b64,
     )
 
     # SUMMARY
     section_anchor("summary")
     summary_text = (resume.get("summary", "") or "").strip()
     if summary_text:
-        # keep it simple: split into sentence bullets
-        bullets = [s.strip() for s in re.split(r'(?<=[.!?])\s+', summary_text) if s.strip()]
+        bullets = [s.strip() for s in re.split(r"(?<=[.!?])\s+", summary_text) if s.strip()]
         card("Professional Summary", "<br>".join([f"• {b}" for b in bullets]))
     else:
         card("Professional Summary", "No summary found in the resume.")
@@ -435,20 +461,26 @@ def main():
     section_anchor("skills")
     skills = resume.get("skills", {}) or {}
     if isinstance(skills, dict) and skills:
-        st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>", unsafe_allow_html=True)
+        st.markdown(
+            "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>",
+            unsafe_allow_html=True,
+        )
         for cat, val in skills.items():
             items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
             chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
             st.markdown(
                 f"<div class='card'><div style='font-weight:800;margin-bottom:8px;'>{cat}</div>{chips}</div>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
     else:
         card("Skills", "Could not read skills table from the DOCX.")
 
     # EXPERIENCE
     section_anchor("experience")
-    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'>Click a role to view details.</div></div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'>Click a role to view details.</div></div>",
+        unsafe_allow_html=True,
+    )
     exp = resume.get("experience", {}) or {}
     if exp:
         for job_header, bullets in exp.items():
