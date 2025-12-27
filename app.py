@@ -26,6 +26,11 @@ COMPANY_LOGOS = {
     "Tata Consultancy Services (TCS)": "assets/company_logos/tcs.jfif"
 }
 
+EDU_LOGOS = {
+    "Utah State University": "assets/edu_logos/USU_CS.jpg",   # change filename if yours is different
+    "Jawaharlal Nehru Technological University": "assets/edu_logos/JNTUH.jpg"
+}
+
 
 # ---------------------------
 # Helpers: GitHub raw download
@@ -258,6 +263,12 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
             if st.button("Close"):
                 st.session_state["selected_job"] = None
 
+def pick_edu_logo(edu_line: str, logo_map: Dict[str, str]) -> Optional[str]:
+    s = (edu_line or "").lower()
+    for key, path in logo_map.items():
+        if key.lower() in s:
+            return path
+    return None
 
 
 # ---------------------------
@@ -597,13 +608,30 @@ def main():
 
 
 
-    # EDUCATION
-    section_anchor("education")
-    edu = resume.get("education", []) or []
-    if edu:
-        card("Education", "<br>".join([f"• {e}" for e in edu]))
-    else:
-        card("Education", "No education found.")
+
+# EDUCATION (with logos)
+section_anchor("education")
+edu_list = resume.get("education", []) or []
+
+if edu_list:
+    st.markdown(
+        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Education</div></div>",
+        unsafe_allow_html=True
+    )
+
+    for edu in edu_list:
+        c1, c2 = st.columns([1, 6], vertical_alignment="center")
+
+        with c1:
+            logo_path = pick_edu_logo(edu, EDU_LOGOS)
+            if logo_path and os.path.exists(logo_path):
+                st.image(logo_path, width=110)
+
+        with c2:
+            st.markdown(f"- {edu}")
+else:
+    card("Education", "No education found.")
+
 
     # PROJECTS
     section_anchor("projects")
