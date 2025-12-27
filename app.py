@@ -263,6 +263,9 @@ def css():
       header { visibility: hidden; }
       footer { visibility: hidden; }
 
+      /* IMPORTANT: if HTML accidentally renders as code, hide the code blocks */
+      pre, code { display: none !important; }
+
       .stApp { background-color: #0b0f19; color: white; }
       .muted { color: #b9c0d4; }
 
@@ -287,40 +290,30 @@ def css():
 
       .id-row { display:flex; align-items:center; gap:14px; }
 
-      .avatar {
-        width: 56px; height: 56px; border-radius: 50%;
-        object-fit: cover;
-        border: 2px solid rgba(135,206,250,0.6);
-      }
-
-      /* IMPORTANT: make nav behave like the reference UI */
       .nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: flex-end;
-        padding-top: 6px;
-        max-width: 520px;
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        justify-content:flex-end;
+        padding-top:6px;
+        max-width:520px;
       }
 
       .nav a {
         display:inline-block;
-        background: #11a9c0;
-        color: white !important;
+        background:#11a9c0;
+        color:white !important;
         text-decoration:none !important;
-        padding: 10px 16px;
-        border-radius: 8px;
-        font-weight: 800;
-        font-size: 14px;
-        line-height: 1;
-        white-space: nowrap;
+        padding:10px 16px;
+        border-radius:8px;
+        font-weight:800;
+        font-size:14px;
+        line-height:1;
+        white-space:nowrap;
       }
-      .nav a:hover { background: #02839a; }
+      .nav a:hover { background:#02839a; }
 
-      /* spacer should match sticky header height */
       .spacer { height: 150px; }
-
-      /* anchor scroll position */
       a[id] { scroll-margin-top: 165px; }
 
       .card {
@@ -330,7 +323,6 @@ def css():
         padding: 18px 18px;
         margin: 12px 0;
       }
-
       .chip {
         display:inline-block;
         padding: 6px 10px;
@@ -350,32 +342,33 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
     html = f"""
-    <div class="sticky">
-      <div class="header-row">
-        <div class="id-row">
-          {avatar_html}
-          <div>
-            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
-            <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
-          </div>
-        </div>
-
-        <div class="nav">
-          <a href="#summary">Summary</a>
-          <a href="#skills">Skills</a>
-          <a href="#experience">Work Experience</a>
-          <a href="#certs">Certifications</a>
-          <a href="#publications">Publications</a>
-          <a href="#projects">Projects</a>
-          <a href="#education">Education</a>
-          <a href="#about">About</a>
-        </div>
+<div class="sticky">
+  <div class="header-row">
+    <div class="id-row">
+      {avatar_html}
+      <div>
+        <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
+        <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
+        <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
       </div>
     </div>
-    <div class="spacer"></div>
-    """
+
+    <div class="nav">
+      <a href="#summary">Summary</a>
+      <a href="#skills">Skills</a>
+      <a href="#experience">Work Experience</a>
+      <a href="#certs">Certifications</a>
+      <a href="#publications">Publications</a>
+      <a href="#projects">Projects</a>
+      <a href="#education">Education</a>
+      <a href="#about">About</a>
+    </div>
+  </div>
+</div>
+<div class="spacer"></div>
+"""
     st.markdown(html, unsafe_allow_html=True)
+
 
 
 def section_anchor(anchor_id: str):
