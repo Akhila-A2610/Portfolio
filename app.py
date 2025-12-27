@@ -2,8 +2,6 @@ import streamlit as st
 import requests, io, re, os, base64
 from docx import Document
 from typing import Dict, Any, Optional
-import textwrap
-
 
 # ======================================================
 # MUST BE FIRST STREAMLIT COMMAND (KEEP ONLY ONCE)
@@ -13,13 +11,13 @@ st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
 # ---------------------------
 # CONFIG - CHANGE THESE
 # ---------------------------
-GITHUB_OWNER = "Akhila-A2610"                 # your GitHub username
-GITHUB_REPO = "portfolio"                    # your repo name (exact)
-RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"  # resume docx path inside repo
+GITHUB_OWNER = "Akhila-A2610"
+GITHUB_REPO = "portfolio"
+RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"
 BRANCH = "main"
 
 # Optional local asset (stored in repo)
-PROFILE_IMG = "assets/profile.jpg"  # create repo folder: assets/profile.jpg
+PROFILE_IMG = "assets/profile.jpg"
 
 
 # ---------------------------
@@ -56,10 +54,9 @@ def download_raw_text(
 def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     doc = Document(io.BytesIO(docx_bytes))
 
-    # Paragraph lines
     para_lines = [p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()]
 
-    # Skills table: {Category: "skills, skills, ..."}
+    # Skills table
     skills_table: Dict[str, str] = {}
     for table in doc.tables:
         for row in table.rows:
@@ -69,7 +66,6 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 right = cells[1].strip()
                 if not left or not right:
                     continue
-                # Skip header row like "Category | Skills"
                 if left.lower() == "category" and right.lower().startswith("skil"):
                     continue
                 skills_table[left] = right
@@ -89,7 +85,6 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     if not para_lines:
         return parsed
 
-    # Header
     parsed["name"] = para_lines[0]
     if len(para_lines) > 1:
         parsed["contact_line"] = para_lines[1]
@@ -111,7 +106,6 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     section: Optional[str] = None
     current_job: Optional[str] = None
 
-    # Job header pattern: "... Jan 2024 – Dec 2025" or "... July 2019 - Mar 2023"
     job_header_re = re.compile(
         r""".+,\s*.+\s+
             ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)
@@ -130,7 +124,6 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
         s = para_lines[i]
         s_u = s.upper().strip()
 
-        # Switch section
         if s_u in HEADINGS:
             section = HEADINGS[s_u]
             current_job = None
@@ -165,7 +158,6 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 i += 1
                 continue
 
-            # wrapped bullet line
             if current_job and parsed["experience"][current_job]:
                 parsed["experience"][current_job][-1] += " " + s.strip()
                 i += 1
@@ -199,9 +191,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
 # ---------------------------
 # Projects loader (projects.docx in repo root)
 # ---------------------------
-def load_projects_from_github(
-    owner: str, repo: str, branch: str = "main", token: Optional[str] = None
-) -> str:
+def load_projects_from_github(owner: str, repo: str, branch: str = "main", token: Optional[str] = None) -> str:
     projects_path = "projects.docx"
     content_bytes = download_raw_file(owner, repo, projects_path, branch, token)
     if not content_bytes:
@@ -216,9 +206,7 @@ def load_projects_from_github(
 # Load resume from GitHub (Streamlit cache)
 # ---------------------------
 @st.cache_data(show_spinner=False)
-def load_resume_from_github(
-    owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None
-) -> Dict[str, Any]:
+def load_resume_from_github(owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None) -> Dict[str, Any]:
     content_bytes = download_raw_file(owner, repo, path, branch, token)
     if content_bytes is None:
         raise RuntimeError("Could not download resume file from GitHub (check file name/path).")
@@ -257,142 +245,144 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 
 # ---------------------------
 # UI helpers
-# -------------------------
-
+# ---------------------------
 def css():
     st.markdown(
-        textwrap.dedent("""
-        <style>
-        /* ---- REMOVE STREAMLIT DEFAULT CHROME ---- */
-        header { visibility: hidden; height: 0px; }
-        footer { visibility: hidden; height: 0px; }
+        """
+<style>
+/* Hide Streamlit top chrome (new + old selectors) */
+header { visibility: hidden; height: 0px; }
+footer { visibility: hidden; height: 0px; }
+[data-testid="stHeader"] { display: none; }
+[data-testid="stToolbar"] { display: none; }
 
-        section.main > div { padding-top: 0rem !important; }
-        div.block-container { padding-top: 0rem !important; }
+/* Remove default top padding/blank space */
+.main .block-container { padding-top: 0rem !important; }
+section.main > div { padding-top: 0rem !important; }
+div.block-container { padding-top: 0rem !important; }
 
-        /* ---- THEME ---- */
-        .stApp { background-color: #0b0f19; color: white; }
-        .muted { color: #b9c0d4; }
+/* IMPORTANT: prevent Streamlit from showing our HTML inside code-style containers */
+div[data-testid="stMarkdownContainer"] pre { display: none !important; }
 
-        /* ---- STICKY HEADER ---- */
-        .sticky {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(11,15,25,0.96);
-            backdrop-filter: blur(10px);
-            border-bottom: 2px solid rgba(135,206,250,0.75);
-            z-index: 9999;
-            padding: 14px 18px;
-        }
+/* Theme */
+.stApp { background-color: #0b0f19; color: white; }
+.muted { color: #b9c0d4; }
 
-        .header-row {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+/* Sticky header */
+.sticky {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%;
+  background: rgba(11,15,25,0.96);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid rgba(135,206,250,0.75);
+  z-index: 9999;
+  padding: 14px 18px;
+}
 
-        .id-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            min-width: 360px;
-        }
+.header-row {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 18px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-        .avatar {
-            width: 74px;
-            height: 74px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid rgba(135,206,250,0.75);
-        }
+.id-row { display:flex; align-items:center; gap:14px; min-width: 360px; }
 
-        .nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: flex-end;
-            padding-top: 6px;
-            max-width: 560px;
-        }
+.avatar {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(135,206,250,0.75);
+}
 
-        .nav a {
-            background: #11a9c0;
-            color: white !important;
-            text-decoration: none !important;
-            padding: 10px 14px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 14px;
-            white-space: nowrap;
-        }
+.nav {
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:flex-end;
+  padding-top:6px;
+  max-width:560px;
+}
 
-        .nav a:hover { background: #02839a; }
+.nav a {
+  background:#11a9c0;
+  color:white !important;
+  text-decoration:none !important;
+  padding:10px 14px;
+  border-radius:8px;
+  font-weight:800;
+  font-size:14px;
+  white-space:nowrap;
+}
+.nav a:hover { background:#02839a; }
 
-        /* ---- LAYOUT FIXES ---- */
-        .spacer { height: 155px; }
-        a[id] { scroll-margin-top: 175px; }
+/* Spacer pushes content below sticky header */
+.spacer { height: 155px; }
 
-        /* ---- CARDS ---- */
-        .card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 18px;
-            padding: 18px;
-            margin: 12px 0;
-        }
+/* Anchors won't hide under sticky header */
+a[id] { scroll-margin-top: 175px; }
 
-        .chip {
-            display: inline-block;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(135,206,250,0.12);
-            border: 1px solid rgba(135,206,250,0.25);
-            margin: 4px 6px 0 0;
-            font-size: 13px;
-        }
-        </style>
-        """),
-        unsafe_allow_html=True
+/* Cards */
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 18px;
+  margin: 12px 0;
+}
+.chip {
+  display:inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(135,206,250,0.12);
+  border: 1px solid rgba(135,206,250,0.25);
+  margin: 4px 6px 0 0;
+  font-size: 13px;
+}
+</style>
+""",
+        unsafe_allow_html=True,
     )
+
 
 def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     avatar_html = ""
     if profile_img_b64:
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
-    html = textwrap.dedent(f"""
-    <div class="sticky">
-      <div class="header-row">
-        <div class="id-row">
-          {avatar_html}
-          <div>
-            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
-            <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
-          </div>
-        </div>
-
-        <div class="nav">
-          <a href="#summary">Summary</a>
-          <a href="#skills">Skills</a>
-          <a href="#experience">Work Experience</a>
-          <a href="#certs">Certifications</a>
-          <a href="#publications">Publications</a>
-          <a href="#projects">Projects</a>
-          <a href="#education">Education</a>
-          <a href="#about">About</a>
-        </div>
-      </div>
-    </div>
-    <div class="spacer"></div>
-    """).strip()
+    # CRITICAL: start the string EXACTLY with <div...> (no leading newline/spaces)
+    html = (
+        f'<div class="sticky">'
+        f'  <div class="header-row">'
+        f'    <div class="id-row">'
+        f'      {avatar_html}'
+        f'      <div>'
+        f'        <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>'
+        f'        <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>'
+        f'        <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>'
+        f'      </div>'
+        f'    </div>'
+        f'    <div class="nav">'
+        f'      <a href="#summary">Summary</a>'
+        f'      <a href="#skills">Skills</a>'
+        f'      <a href="#experience">Work Experience</a>'
+        f'      <a href="#certs">Certifications</a>'
+        f'      <a href="#publications">Publications</a>'
+        f'      <a href="#projects">Projects</a>'
+        f'      <a href="#education">Education</a>'
+        f'      <a href="#about">About</a>'
+        f'    </div>'
+        f'  </div>'
+        f'</div>'
+        f'<div class="spacer"></div>'
+    )
 
     st.markdown(html, unsafe_allow_html=True)
+
 
 def section_anchor(anchor_id: str):
     st.markdown(f'<a id="{anchor_id}"></a>', unsafe_allow_html=True)
@@ -416,7 +406,6 @@ def card(title: str, body_html: str):
 def main():
     css()
 
-    # Refresh button (clear cache) — sidebar
     with st.sidebar:
         if st.button("🔄 Refresh / Clear cache"):
             st.cache_data.clear()
@@ -430,7 +419,6 @@ def main():
 
     resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token)
 
-    # Profile image
     profile_img_b64 = None
     if os.path.exists(PROFILE_IMG):
         with open(PROFILE_IMG, "rb") as img_file:
