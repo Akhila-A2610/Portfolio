@@ -1,7 +1,7 @@
 import streamlit as st
 import requests, io, re, os, base64
 from docx import Document
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 
 # ======================================================
 # MUST BE FIRST STREAMLIT COMMAND (KEEP ONLY ONCE)
@@ -17,10 +17,11 @@ RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"  # resume docx path inside repo
 BRANCH = "main"
 
 # Optional local asset (stored in repo)
-PROFILE_IMG = "assets/profile.jpg"
+PROFILE_IMG = "assets/profile.jpg"  # create repo folder: assets/profile.jpg
+
 
 # ---------------------------
-# Helpers: GitHub API + raw download
+# Helpers: GitHub raw download
 # ---------------------------
 def download_raw_file(
     owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None
@@ -66,6 +67,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 right = cells[1].strip()
                 if not left or not right:
                     continue
+                # Skip header row like "Category | Skils/Skills"
                 if left.lower() == "category" and right.lower().startswith("skil"):
                     continue
                 skills_table[left] = right
@@ -107,9 +109,17 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     section: Optional[str] = None
     current_job: Optional[str] = None
 
+    # Job header pattern: "... Jan 2024 – Dec 2025" or "... July 2019 - Mar 2023"
     job_header_re = re.compile(
-        r""".+,\s*.+\s+((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\s*[–-]\s*
-            (Present|((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})""",
+        r""".+,\s*.+\s+
+            ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)
+            |January|February|March|April|May|June|July|August|September|October|November|December)
+            \s+\d{4}\s*[–-]\s*
+            (Present|
+            ((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)
+            |January|February|March|April|May|June|July|August|September|October|November|December)
+            \s+\d{4})
+        """,
         re.IGNORECASE | re.VERBOSE
     )
 
@@ -118,6 +128,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
         s = para_lines[i]
         s_u = s.upper().strip()
 
+        # Switch section
         if s_u in HEADINGS:
             section = HEADINGS[s_u]
             current_job = None
@@ -152,6 +163,7 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 i += 1
                 continue
 
+            # wrapped bullet line
             if current_job and parsed["experience"][current_job]:
                 parsed["experience"][current_job][-1] += " " + s.strip()
                 i += 1
@@ -214,26 +226,28 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
     if not contact_text:
         return ""
 
+    # email
     email_pattern = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
     contact_text = email_pattern.sub(
-        lambda m: f'<a href="mailto:{m.group(0)}" style="color:#87CEFA;">{m.group(0)}</a>',
+        lambda m: f'<a href="mailto:{m.group(0)}" style="color:#87CEFA;text-decoration:none;">{m.group(0)}</a>',
         contact_text
     )
 
+    # LinkedIn and GitHub keyword replacement
     contact_text = re.sub(
         r'\bLinkedIn\b',
-        f'<a href="{linkedin_url}" target="_blank" style="color:#87CEFA;">LinkedIn</a>',
+        f'<a href="{linkedin_url}" target="_blank" style="color:#87CEFA;text-decoration:none;">LinkedIn</a>',
         contact_text,
         flags=re.IGNORECASE
     )
-
     contact_text = re.sub(
         r'\bGitHub\b',
-        f'<a href="{github_url}" target="_blank" style="color:#87CEFA;">GitHub</a>',
+        f'<a href="{github_url}" target="_blank" style="color:#87CEFA;text-decoration:none;">GitHub</a>',
         contact_text,
         flags=re.IGNORECASE
     )
 
+    # normalize separators
     contact_text = contact_text.replace("|", "&nbsp;|&nbsp;")
     return contact_text
 
@@ -244,10 +258,11 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 def css():
     st.markdown("""
     <style>
-      /* REMOVE STREAMLIT DEFAULT HEADER & TOP GAP */
+      /* remove Streamlit default top space + hide chrome */
       section.main > div { padding-top: 0rem !important; }
       header { visibility: hidden; }
       footer { visibility: hidden; }
+
       .stApp { background-color: #0b0f19; color: white; }
       .muted { color: #b9c0d4; }
 
@@ -260,15 +275,32 @@ def css():
         z-index: 999;
         padding: 14px 18px;
       }
+
       .header-row {
-        display:flex; align-items:center; justify-content:space-between; gap:18px;
-        max-width: 1200px; margin: 0 auto;
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 18px;
+        max-width: 1200px;
+        margin: 0 auto;
       }
+
       .id-row { display:flex; align-items:center; gap:14px; }
+
       .avatar {
         width: 56px; height: 56px; border-radius: 50%;
         object-fit: cover;
         border: 2px solid rgba(135,206,250,0.6);
+      }
+
+      /* IMPORTANT: make nav behave like the reference UI */
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: flex-end;
+        padding-top: 6px;
+        max-width: 520px;
       }
 
       .nav a {
@@ -277,14 +309,19 @@ def css():
         color: white !important;
         text-decoration:none !important;
         padding: 10px 16px;
-        border-radius: 6px;
-        margin-left: 10px;
+        border-radius: 8px;
         font-weight: 800;
         font-size: 14px;
+        line-height: 1;
+        white-space: nowrap;
       }
       .nav a:hover { background: #02839a; }
-      .spacer { height: 140px; }
-      a[id] { scroll-margin-top: 160px; }
+
+      /* spacer should match sticky header height */
+      .spacer { height: 150px; }
+
+      /* anchor scroll position */
+      a[id] { scroll-margin-top: 165px; }
 
       .card {
         background: rgba(255,255,255,0.04);
@@ -293,6 +330,7 @@ def css():
         padding: 18px 18px;
         margin: 12px 0;
       }
+
       .chip {
         display:inline-block;
         padding: 6px 10px;
@@ -302,7 +340,6 @@ def css():
         margin: 4px 6px 0 0;
         font-size: 13px;
       }
-
     </style>
     """, unsafe_allow_html=True)
 
@@ -313,35 +350,32 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
     html = f"""
-<div class="sticky">
-  <div class="header-row">
-    <div class="id-row">
-      {avatar_html}
-      <div>
-        <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-        <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
-        <div class="contact" style="margin-top:6px;font-size:15px;">{contact_html}</div>
+    <div class="sticky">
+      <div class="header-row">
+        <div class="id-row">
+          {avatar_html}
+          <div>
+            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
+            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
+            <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <a href="#summary">Summary</a>
+          <a href="#skills">Skills</a>
+          <a href="#experience">Work Experience</a>
+          <a href="#certs">Certifications</a>
+          <a href="#publications">Publications</a>
+          <a href="#projects">Projects</a>
+          <a href="#education">Education</a>
+          <a href="#about">About</a>
+        </div>
       </div>
     </div>
-
-    <div class="nav">
-      <a href="#summary">Summary</a>
-      <a href="#skills">Skills</a>
-
-      <a href="#experience">Work Experience</a>
-      <a href="#certs">Certifications</a>
-      <a href="#publications">Publication</a>
-      <a href="#projects">Projects</a>
-      <a href="#education">Education</a>
-      <a href="#about">About This Page</a>
-    </div>
-  </div>
-</div>
-<div class="spacer"></div>
-"""
+    <div class="spacer"></div>
+    """
     st.markdown(html, unsafe_allow_html=True)
-
-
 
 
 def section_anchor(anchor_id: str):
@@ -363,7 +397,7 @@ def card(title: str, body_html: str):
 def main():
     css()
 
-    # Refresh button (clear cache) — put it in sidebar
+    # Refresh button (clear cache) — sidebar
     with st.sidebar:
         if st.button("🔄 Refresh / Clear cache"):
             st.cache_data.clear()
@@ -375,10 +409,7 @@ def main():
     except Exception:
         token = None
 
-    with st.spinner("Loading resume from GitHub..."):
-        resume = load_resume_from_github(
-            GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token
-        )
+    resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token)
 
     # Profile image
     profile_img_b64 = None
@@ -388,9 +419,7 @@ def main():
 
     linkedin_url = "https://www.linkedin.com/in/akhilaakkala/"
     github_url = f"https://github.com/{GITHUB_OWNER}"
-    contact_html = make_hyperlinked_contact(
-        resume.get("contact_line", ""), linkedin_url, github_url
-    )
+    contact_html = make_hyperlinked_contact(resume.get("contact_line", ""), linkedin_url, github_url)
 
     render_sticky_header(
         name=resume.get("name", "Akhila A"),
@@ -403,6 +432,7 @@ def main():
     section_anchor("summary")
     summary_text = (resume.get("summary", "") or "").strip()
     if summary_text:
+        # keep it simple: split into sentence bullets
         bullets = [s.strip() for s in re.split(r'(?<=[.!?])\s+', summary_text) if s.strip()]
         card("Professional Summary", "<br>".join([f"• {b}" for b in bullets]))
     else:
@@ -412,10 +442,7 @@ def main():
     section_anchor("skills")
     skills = resume.get("skills", {}) or {}
     if isinstance(skills, dict) and skills:
-        st.markdown(
-            "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div></div>", unsafe_allow_html=True)
         for cat, val in skills.items():
             items = [x.strip() for x in re.split(r"[,\n]+", val) if x.strip()]
             chips = " ".join([f"<span class='chip'>{x}</span>" for x in items])
@@ -428,11 +455,7 @@ def main():
 
     # EXPERIENCE
     section_anchor("experience")
-    st.markdown(
-        "<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'></div></div>",
-        unsafe_allow_html=True
-    )
-
+    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div><div class='muted'>Click a role to view details.</div></div>", unsafe_allow_html=True)
     exp = resume.get("experience", {}) or {}
     if exp:
         for job_header, bullets in exp.items():
@@ -480,6 +503,7 @@ def main():
         card("About This Page", about_txt.replace("\n", "<br>"))
     else:
         card("About This Page", "aboutpage.txt not found in your GitHub repo root.")
+
 
 if __name__ == "__main__":
     main()
