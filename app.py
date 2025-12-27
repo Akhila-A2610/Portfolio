@@ -2,6 +2,8 @@ import streamlit as st
 import requests, io, re, os, base64
 from docx import Document
 from typing import Dict, Any, Optional
+import textwrap
+
 
 # ======================================================
 # MUST BE FIRST STREAMLIT COMMAND (KEEP ONLY ONCE)
@@ -255,145 +257,144 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 
 # ---------------------------
 # UI helpers
-# ---------------------------
+# -------------------------
+
 def css():
     st.markdown(
-        """
-<style>
-  /* ---- REMOVE STREAMLIT DEFAULT TOP SPACE / CHROME ---- */
-  header { visibility: hidden; height: 0px; }
-  footer { visibility: hidden; height: 0px; }
+        textwrap.dedent("""
+        <style>
+        /* ---- REMOVE STREAMLIT DEFAULT CHROME ---- */
+        header { visibility: hidden; height: 0px; }
+        footer { visibility: hidden; height: 0px; }
 
-  /* remove default paddings (this fixes the blank space at top) */
-  section.main > div { padding-top: 0rem !important; }
-  div.block-container { padding-top: 0rem !important; }
+        section.main > div { padding-top: 0rem !important; }
+        div.block-container { padding-top: 0rem !important; }
 
-  /* ---- THEME ---- */
-  .stApp { background-color: #0b0f19; color: white; }
-  .muted { color: #b9c0d4; }
+        /* ---- THEME ---- */
+        .stApp { background-color: #0b0f19; color: white; }
+        .muted { color: #b9c0d4; }
 
-  /* ---- STICKY HEADER ---- */
-  .sticky {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(11,15,25,0.96);
-    backdrop-filter: blur(10px);
-    border-bottom: 2px solid rgba(135,206,250,0.75);
-    z-index: 9999;
-    padding: 14px 18px;
-  }
+        /* ---- STICKY HEADER ---- */
+        .sticky {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(11,15,25,0.96);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(135,206,250,0.75);
+            z-index: 9999;
+            padding: 14px 18px;
+        }
 
-  .header-row {
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap: 18px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
+        .header-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-  .id-row {
-    display:flex;
-    align-items:center;
-    gap:14px;
-    min-width: 360px;
-  }
+        .id-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 360px;
+        }
 
-  .avatar {
-    width: 74px;
-    height: 74px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(135,206,250,0.75);
-  }
+        .avatar {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(135,206,250,0.75);
+        }
 
-  .nav {
-    display:flex;
-    flex-wrap:wrap;
-    gap:10px;
-    justify-content:flex-end;
-    padding-top:6px;
-    max-width:560px;
-  }
+        .nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+            padding-top: 6px;
+            max-width: 560px;
+        }
 
-  .nav a {
-    display:inline-block;
-    background:#11a9c0;
-    color:white !important;
-    text-decoration:none !important;
-    padding:10px 14px;
-    border-radius:8px;
-    font-weight:800;
-    font-size:14px;
-    line-height:1;
-    white-space:nowrap;
-  }
-  .nav a:hover { background:#02839a; }
+        .nav a {
+            background: #11a9c0;
+            color: white !important;
+            text-decoration: none !important;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 14px;
+            white-space: nowrap;
+        }
 
-  /* push content below sticky header */
-  .spacer { height: 155px; }
+        .nav a:hover { background: #02839a; }
 
-  /* make anchors not hide behind sticky header */
-  a[id] { scroll-margin-top: 175px; }
+        /* ---- LAYOUT FIXES ---- */
+        .spacer { height: 155px; }
+        a[id] { scroll-margin-top: 175px; }
 
-  /* ---- CARDS ---- */
-  .card {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 18px;
-    padding: 18px 18px;
-    margin: 12px 0;
-  }
+        /* ---- CARDS ---- */
+        .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 18px;
+            margin: 12px 0;
+        }
 
-  .chip {
-    display:inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(135,206,250,0.12);
-    border: 1px solid rgba(135,206,250,0.25);
-    margin: 4px 6px 0 0;
-    font-size: 13px;
-  }
-</style>
-""",
-        unsafe_allow_html=True,
+        .chip {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(135,206,250,0.12);
+            border: 1px solid rgba(135,206,250,0.25);
+            margin: 4px 6px 0 0;
+            font-size: 13px;
+        }
+        </style>
+        """),
+        unsafe_allow_html=True
     )
 
 
-def render_sticky_header(name: str, role: str, contact_html: str, profile_img_b64: Optional[str] = None):
+
+def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     avatar_html = ""
     if profile_img_b64:
         avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
 
-    # IMPORTANT: keep HTML left-aligned (no leading indentation) so it never renders as code.
-    html = f"""<div class="sticky">
-  <div class="header-row">
-    <div class="id-row">
-      {avatar_html}
-      <div>
-        <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-        <div style="font-size:22px;font-weight:900;color:limegreen;line-height:1.15;">{role}</div>
-        <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
+    html = textwrap.dedent(f"""
+    <div class="sticky">
+      <div class="header-row">
+        <div class="id-row">
+          {avatar_html}
+          <div>
+            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
+            <div style="font-size:22px;font-weight:900;color:limegreen;line-height:1.15;">{role}</div>
+            <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <a href="#summary">Summary</a>
+          <a href="#skills">Skills</a>
+          <a href="#experience">Work Experience</a>
+          <a href="#certs">Certifications</a>
+          <a href="#publications">Publications</a>
+          <a href="#projects">Projects</a>
+          <a href="#education">Education</a>
+          <a href="#about">About</a>
+        </div>
       </div>
     </div>
+    <div class="spacer"></div>
+    """).strip()
 
-    <div class="nav">
-      <a href="#summary">Summary</a>
-      <a href="#skills">Skills</a>
-      <a href="#experience">Work Experience</a>
-      <a href="#certs">Certifications</a>
-      <a href="#publications">Publications</a>
-      <a href="#projects">Projects</a>
-      <a href="#education">Education</a>
-      <a href="#about">About</a>
-    </div>
-  </div>
-</div>
-<div class="spacer"></div>"""
     st.markdown(html, unsafe_allow_html=True)
-
 
 def section_anchor(anchor_id: str):
     st.markdown(f'<a id="{anchor_id}"></a>', unsafe_allow_html=True)
