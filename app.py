@@ -244,6 +244,10 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 def css():
     st.markdown("""
     <style>
+      /* REMOVE STREAMLIT DEFAULT HEADER & TOP GAP */
+      section.main > div { padding-top: 0rem !important; }
+      header { visibility: hidden; }
+      footer { visibility: hidden; }
       .stApp { background-color: #0b0f19; color: white; }
       .muted { color: #b9c0d4; }
 
@@ -322,6 +326,8 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
 
     <div class="nav">
       <a href="#summary">Summary</a>
+      <a href="#skills">Skills</a>
+
       <a href="#experience">Work Experience</a>
       <a href="#certs">Certifications</a>
       <a href="#publications">Publication</a>
@@ -359,10 +365,10 @@ def main():
 
     # Refresh button (clear cache)
     col1, col2 = st.columns([1, 6])
-    with col1:
-        if st.button("🔄 Refresh"):
-            st.cache_data.clear()
-            st.rerun()
+    with st.sidebar:
+    if st.button("🔄 Refresh / Clear cache"):
+        st.cache_data.clear()
+        st.rerun()
 
     token = None
     try:
