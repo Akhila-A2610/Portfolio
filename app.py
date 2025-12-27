@@ -269,17 +269,18 @@ def css():
 
       .nav a {
         display:inline-block;
-        background: rgba(23,162,184,0.95);
+        background: #11a9c0;
         color: white !important;
         text-decoration:none !important;
-        padding: 7px 10px;
-        border-radius: 10px;
-        margin-left: 8px;
-        font-weight: 650;
-        font-size: 13px;
+        padding: 10px 16px;
+        border-radius: 6px;
+        margin-left: 10px;
+        font-weight: 800;
+        font-size: 14px;
       }
-      .nav a:hover { background: rgba(2,79,156,0.95); }
-      .spacer { height: 96px; }
+      .nav a:hover { background: #02839a; }
+      .spacer { height: 140px; }
+      a[id] { scroll-margin-top: 160px; }
 
       .card {
         background: rgba(255,255,255,0.04);
@@ -314,25 +315,26 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
         <div class="id-row">
           {avatar_html}
           <div>
-            <div style="font-size:26px;font-weight:800;color:gold;line-height:1.1;">{name}</div>
-            <div style="font-size:15px;font-weight:700;color:limegreen;line-height:1.2;">{role}</div>
-            <div class="muted" style="margin-top:3px;">{contact_html}</div>
+            <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
+            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
+            <div style="margin-top:6px;font-size:15px;">{contact_html}</div>
           </div>
         </div>
+
         <div class="nav">
           <a href="#summary">Summary</a>
-          <a href="#skills">Skills</a>
-          <a href="#experience">Experience</a>
-          <a href="#publications">Publications</a>
+          <a href="#experience">Work Experience</a>
           <a href="#certs">Certifications</a>
-          <a href="#education">Education</a>
+          <a href="#publications">Publication</a>
           <a href="#projects">Projects</a>
-          <a href="#about">About</a>
+          <a href="#education">Education</a>
+          <a href="#about">About This Page</a>
         </div>
       </div>
     </div>
     <div class="spacer"></div>
     """, unsafe_allow_html=True)
+
 
 
 def section_anchor(anchor_id: str):
