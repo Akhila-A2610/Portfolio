@@ -233,88 +233,215 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 # ---------------------------
 # Main UI
 # ---------------------------
+def css():
+    st.markdown("""
+    <style>
+      .stApp { background-color: #0b0f19; color: white; }
+
+      /* general typography */
+      h1, h2, h3 { letter-spacing: 0.2px; }
+      .muted { color: #b9c0d4; }
+
+      /* sticky header */
+      .sticky {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(11,15,25,0.92);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        z-index: 999;
+        padding: 14px 18px;
+      }
+      .header-row {
+        display:flex; align-items:center; justify-content:space-between; gap: 18px;
+        max-width: 1200px; margin: 0 auto;
+      }
+      .id-row { display:flex; align-items:center; gap: 14px; }
+      .avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(135,206,250,0.6); }
+
+      .nav a {
+        display:inline-block;
+        background: rgba(23,162,184,0.95);
+        color: white !important;
+        text-decoration:none !important;
+        padding: 7px 10px;
+        border-radius: 10px;
+        margin-left: 8px;
+        font-weight: 650;
+        font-size: 13px;
+      }
+      .nav a:hover { background: rgba(2,79,156,0.95); }
+
+      .spacer { height: 96px; }
+
+      /* section cards */
+      .card {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 18px;
+        padding: 18px 18px;
+        margin: 12px 0;
+      }
+      .chip {
+        display:inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(135,206,250,0.12);
+        border: 1px solid rgba(135,206,250,0.25);
+        margin: 4px 6px 0 0;
+        font-size: 13px;
+      }
+
+      /* make anchors not hide behind sticky header */
+      a[id] { scroll-margin-top: 110px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+def render_sticky_header(name, role, contact_html, profile_img_b64=None):
+    avatar_html = ""
+    if profile_img_b64:
+        avatar_html = f"<img class='avatar' src='data:image/jpeg;base64,{profile_img_b64}' />"
+
+    st.markdown(f"""
+    <div class="sticky">
+      <div class="header-row">
+        <div class="id-row">
+          {avatar_html}
+          <div>
+            <div style="font-size:26px;font-weight:800;color:gold;line-height:1.1;">{name}</div>
+            <div style="font-size:15px;font-weight:700;color:limegreen;line-height:1.2;">{role}</div>
+            <div class="muted" style="margin-top:3px;">{contact_html}</div>
+          </div>
+        </div>
+        <div class="nav">
+          <a href="#summary">Summary</a>
+          <a href="#skills">Skills</a>
+          <a href="#experience">Experience</a>
+          <a href="#publications">Publications</a>
+          <a href="#certs">Certifications</a>
+          <a href="#education">Education</a>
+          <a href="#projects">Projects</a>
+          <a href="#about">About</a>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    """, unsafe_allow_html=True)
+
+def section_anchor(anchor_id: str):
+    st.markdown(f'<a id="{anchor_id}"></a>', unsafe_allow_html=True)
+
+def card(title: str, body_md: str):
+    st.markdown(f"""
+    <div class="card">
+      <div style="font-size:20px;font-weight:800;margin-bottom:8px;">{title}</div>
+      <div class="muted" style="font-size:15px;line-height:1.6;">{body_md}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def main():
     st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
+    css()
 
-    # Optional: token for private repos (yours is public, so not required)
     token = None
     try:
         token = st.secrets.get("GITHUB_TOKEN", None)
     except Exception:
         token = None
 
-    st.markdown("<style>.stApp{background-color:black;color:white;}</style>", unsafe_allow_html=True)
-
     with st.spinner("Loading resume from GitHub..."):
         resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token)
 
-    # Header
-    profile_img_tag = ""
+    # Profile image (optional)
+    profile_img_b64 = None
     if os.path.exists(PROFILE_IMG):
         with open(PROFILE_IMG, "rb") as img_file:
-            img_b64 = base64.b64encode(img_file.read()).decode()
-            profile_img_tag = f"<img src='data:image/jpeg;base64,{img_b64}' width='80'>"
+            profile_img_b64 = base64.b64encode(img_file.read()).decode()
 
-    linkedin_url = "https://www.linkedin.com/in/YOUR_LINKEDIN/"
+    # Links
+    linkedin_url = "https://www.linkedin.com/in/<your-linkedin>/"  # <-- change
     github_url = f"https://github.com/{GITHUB_OWNER}"
-
     contact_html = make_hyperlinked_contact(resume.get("contact_line",""), linkedin_url, github_url)
 
-    st.markdown(f"""
-    <div style="display:flex; gap:20px; align-items:center; border-bottom:2px solid #87CEFA; padding-bottom:10px;">
-        {profile_img_tag}
-        <div>
-            <h1 style="margin:0;color:gold;">{resume.get("name","")}</h1>
-            <h2 style="margin:0;color:limegreen;">{resume.get("role","")}</h2>
-            <p style="margin:0;">{contact_html}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Sticky header
+    render_sticky_header(
+        name=resume.get("name","Akhila A"),
+        role=resume.get("role","Senior Data Engineer | Data Scientist"),
+        contact_html=contact_html,
+        profile_img_b64=profile_img_b64
+    )
 
-    st.markdown("## Professional Summary")
-    summary_text = resume.get("summary","").strip()
+    # SUMMARY
+    section_anchor("summary")
+    summary_text = (resume.get("summary","") or "").strip()
     if summary_text:
         bullets = [s.strip() for s in re.split(r'(?<=[.!?])\s+', summary_text) if s.strip()]
-        st.markdown("\n".join([f"- {b}" for b in bullets]))
+        card("Professional Summary", "<br>".join([f"• {b}" for b in bullets]))
     else:
-        st.write("No summary found.")
+        card("Professional Summary", "Add a **Professional Summary** section in your DOCX.")
 
-    st.markdown("## Skills")
-    st.write(resume.get("skills","").strip() or "No skills found.")
+    # SKILLS (display as chips)
+    section_anchor("skills")
+    skills_text = (resume.get("skills","") or "").strip()
+    if skills_text:
+        # split by commas and newlines, keep it simple
+        raw = re.split(r"[,\n]+", skills_text)
+        skills = [s.strip() for s in raw if s.strip() and len(s.strip()) < 60]
+        chips = " ".join([f"<span class='chip'>{s}</span>" for s in skills[:60]])
+        st.markdown(f"<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Skills</div>{chips}</div>", unsafe_allow_html=True)
+    else:
+        card("Skills", "Add **Technical Skills** content in your DOCX.")
 
-    st.markdown("## Work Experience")
-    exp = resume.get("experience", {})
+    # EXPERIENCE
+    section_anchor("experience")
+    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;margin-bottom:8px;'>Work Experience</div></div>", unsafe_allow_html=True)
+    exp = resume.get("experience", {}) or {}
     if exp:
-        for comp, details in exp.items():
-            with st.expander(comp, expanded=False):
-                lines = [l.strip() for l in details.split("\n") if l.strip()]
+        for job_title_line, details in exp.items():
+            with st.expander(job_title_line, expanded=False):
+                lines = [l.strip() for l in (details or "").split("\n") if l.strip()]
                 st.markdown("\n".join([f"- {l}" for l in lines]))
     else:
-        st.write("No experience found.")
+        st.info("No experience parsed yet — make sure your DOCX has a **Professional Experience** heading and job lines with dates.")
 
-    st.markdown("## Certifications")
-    certs = resume.get("certifications", [])
+    # PUBLICATIONS
+    section_anchor("publications")
+    pubs = (resume.get("publications","") or "").strip()
+    if pubs:
+        card("Publications", pubs.replace("\n", "<br>"))
+    else:
+        card("Publications", "Add your **Publications** section in the DOCX (or leave it out).")
+
+    # CERTIFICATIONS
+    section_anchor("certs")
+    certs = resume.get("certifications", []) or []
     if certs:
-        st.markdown("\n".join([f"- {c}" for c in certs]))
+        card("Certifications", "<br>".join([f"• {c}" for c in certs]))
     else:
-        st.write("No certifications found.")
+        card("Certifications", "Add **Certifications & Achievements** section in your DOCX.")
 
-    st.markdown("## Education")
-    edu = resume.get("education", [])
+    # EDUCATION
+    section_anchor("education")
+    edu = resume.get("education", []) or []
     if edu:
-        st.markdown("\n".join([f"- {e}" for e in edu]))
+        card("Education", "<br>".join([f"• {e}" for e in edu]))
     else:
-        st.write("No education found.")
+        card("Education", "Add **Education** section in your DOCX.")
 
-    st.markdown("## Projects")
-    st.markdown(load_projects_from_github(GITHUB_OWNER, GITHUB_REPO, BRANCH, token))
+    # PROJECTS
+    section_anchor("projects")
+    card("Projects", load_projects_from_github(GITHUB_OWNER, GITHUB_REPO, BRANCH, token).replace("\n", "<br>"))
 
-    st.markdown("## About This Page")
+    # ABOUT
+    section_anchor("about")
     if os.path.exists("aboutpage.txt"):
         with open("aboutpage.txt", "r", encoding="utf-8") as f:
-            st.write(f.read())
+            card("About This Page", f.read().replace("\n", "<br>"))
     else:
-        st.write("aboutpage.txt not found.")
+        card("About This Page", "Add **aboutpage.txt** to your repo root (same folder as app.py).")
+    
 
 if __name__ == "__main__":
     main()
