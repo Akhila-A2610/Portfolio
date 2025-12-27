@@ -574,16 +574,27 @@ def main():
     if pubs:
         items = []
         for p in pubs:
-            title = p.get("title","").strip()
-            venue = p.get("venue","").strip()
-            url = p.get("url","").strip()
+            title = p.get("title", "").strip()
+            venue = p.get("venue", "").strip()
+            url = p.get("url", "").strip()
+
             if url:
-                items.append(f"• <a href='{url}' target='_blank' style='color:#87CEFA;text-decoration:none;'><b>{title}  </b></a><br><span class='muted'>{venue}</span>")
+                items.append(
+                    f"• <a href='{url}' target='_blank' "
+                    f"style='color:#87CEFA;text-decoration:none;'>"
+                    f"<b>{title}</b></a><br>"
+                    f"<span class='muted'>{venue}</span>"
+                )
             else:
-                items.append(f"• <b>{title}</b><br><span class='muted'>{venue}</span>")
+                items.append(
+                    f"• <b>{title}</b><br>"
+                    f"<span class='muted'>{venue}</span>"
+                )
+
         card("Publications", "<br><br>".join(items))
-     else:
+    else:
         card("Publications", "No publications found (publications.json missing or empty).")
+
 
 
     # EDUCATION
