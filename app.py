@@ -14,7 +14,7 @@ st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
 GITHUB_OWNER = "Akhila-A2610"
 GITHUB_REPO = "portfolio"
 RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"
-LINKEDIN_USER = "akhilaa2610"
+
 
 BRANCH = "main"
 
@@ -419,12 +419,15 @@ def main():
     except Exception:
         token = None
 
-    resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO,LINKEDIN_USER, BRANCH, token)
+    resume = load_resume_from_github(GITHUB_OWNER, GITHUB_REPO, RESUME_PATH_IN_REPO, BRANCH, token)
 
     profile_img_b64 = None
     if os.path.exists(PROFILE_IMG):
         with open(PROFILE_IMG, "rb") as img_file:
             profile_img_b64 = base64.b64encode(img_file.read()).decode()
+
+    LINKEDIN_USER = "akhilaa2610"
+
 
     linkedin_url = f"https://www.linkedin.com/in/{LINKEDIN_USER}/"
     github_url = f"https://github.com/{GITHUB_OWNER}"
