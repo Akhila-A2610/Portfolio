@@ -1,42 +1,27 @@
 import streamlit as st
 import requests, io, re, os, base64
-from datetime import datetime
 from docx import Document
 from typing import Dict, Any, Optional, List
 
+# ======================================================
+# MUST BE FIRST STREAMLIT COMMAND (KEEP ONLY ONCE)
+# ======================================================
+st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
 
 # ---------------------------
 # CONFIG - CHANGE THESE
 # ---------------------------
-GITHUB_OWNER = "Akhila-A2610"          # your GitHub username
-GITHUB_REPO = "portfolio"             # your repo name (exact)
+GITHUB_OWNER = "Akhila-A2610"                 # your GitHub username
+GITHUB_REPO = "portfolio"                    # your repo name (exact)
 RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"  # resume docx path inside repo
 BRANCH = "main"
 
 # Optional local asset (stored in repo)
 PROFILE_IMG = "assets/profile.jpg"
 
-
 # ---------------------------
 # Helpers: GitHub API + raw download
 # ---------------------------
-def get_github_commits_for_file(
-    owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None
-) -> Optional[dict]:
-    url = f"https://api.github.com/repos/{owner}/{repo}/commits"
-    params = {"path": path, "sha": branch, "per_page": 1}
-    headers = {"Accept": "application/vnd.github.v3+json"}
-    if token:
-        headers["Authorization"] = f"Bearer {token}"
-
-    r = requests.get(url, params=params, headers=headers, timeout=15)
-    if r.status_code == 200:
-        data = r.json()
-        if isinstance(data, list) and data:
-            return data[0]
-    return None
-
-
 def download_raw_file(
     owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None
 ) -> Optional[bytes]:
@@ -81,21 +66,20 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
                 right = cells[1].strip()
                 if not left or not right:
                     continue
-                # Skip a header row if present
                 if left.lower() == "category" and right.lower().startswith("skil"):
                     continue
                 skills_table[left] = right
 
     parsed: Dict[str, Any] = {
         "name": "",
-        "role": "Senior Data Engineer | Data Scientist",  # default; you can hardcode your preferred title
+        "role": "Senior Data Engineer | Data Scientist",
         "contact_line": "",
         "summary": "",
-        "skills": skills_table,            # dict
-        "publications": [],                # list[str]
-        "experience": {},                  # dict[str, list[str]]
-        "education": [],                   # list[str]
-        "certifications": []               # list[str]
+        "skills": skills_table,
+        "publications": [],
+        "experience": {},
+        "education": [],
+        "certifications": []
     }
 
     if not para_lines:
@@ -123,19 +107,17 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     section: Optional[str] = None
     current_job: Optional[str] = None
 
-    # Job header line pattern with dates like "Jan 2024 – Dec 2025" or "July 2019 - Mar 2023"
     job_header_re = re.compile(
         r""".+,\s*.+\s+((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}\s*[–-]\s*
             (Present|((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)|January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})""",
         re.IGNORECASE | re.VERBOSE
     )
 
-    i = 2  # after name + contact
+    i = 2
     while i < len(para_lines):
         s = para_lines[i]
         s_u = s.upper().strip()
 
-        # Switch section
         if s_u in HEADINGS:
             section = HEADINGS[s_u]
             current_job = None
@@ -159,20 +141,17 @@ def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
             continue
 
         if section == "experience":
-            # New job header
             if job_header_re.search(s) and "•" not in s:
                 current_job = s.strip()
                 parsed["experience"][current_job] = []
                 i += 1
                 continue
 
-            # Bullet
             if current_job and s.strip().startswith("•"):
                 parsed["experience"][current_job].append(clean_bullet(s))
                 i += 1
                 continue
 
-            # Wrapped line
             if current_job and parsed["experience"][current_job]:
                 parsed["experience"][current_job][-1] += " " + s.strip()
                 i += 1
@@ -218,7 +197,7 @@ def load_projects_from_github(owner: str, repo: str, branch: str = "main", token
 
 
 # ---------------------------
-# Load resume from GitHub (cache in Streamlit, not on disk)
+# Load resume from GitHub (Streamlit cache)
 # ---------------------------
 @st.cache_data(show_spinner=False)
 def load_resume_from_github(owner: str, repo: str, path: str, branch: str = "main", token: Optional[str] = None) -> Dict[str, Any]:
@@ -235,14 +214,12 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
     if not contact_text:
         return ""
 
-    # email
     email_pattern = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
     contact_text = email_pattern.sub(
         lambda m: f'<a href="mailto:{m.group(0)}" style="color:#87CEFA;">{m.group(0)}</a>',
         contact_text
     )
 
-    # LinkedIn and GitHub keyword replacement
     contact_text = re.sub(
         r'\bLinkedIn\b',
         f'<a href="{linkedin_url}" target="_blank" style="color:#87CEFA;">LinkedIn</a>',
@@ -257,7 +234,6 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
         flags=re.IGNORECASE
     )
 
-    # normalize separators
     contact_text = contact_text.replace("|", "&nbsp;|&nbsp;")
     return contact_text
 
@@ -269,7 +245,6 @@ def css():
     st.markdown("""
     <style>
       .stApp { background-color: #0b0f19; color: white; }
-      h1, h2, h3 { letter-spacing: 0.2px; }
       .muted { color: #b9c0d4; }
 
       .sticky {
@@ -377,7 +352,6 @@ def card(title: str, body_html: str):
 # Main app
 # ---------------------------
 def main():
-    st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
     css()
 
     # Refresh button (clear cache)
@@ -387,7 +361,6 @@ def main():
             st.cache_data.clear()
             st.rerun()
 
-    # Token (optional; only needed for private repo)
     token = None
     try:
         token = st.secrets.get("GITHUB_TOKEN", None)
@@ -403,7 +376,6 @@ def main():
         with open(PROFILE_IMG, "rb") as img_file:
             profile_img_b64 = base64.b64encode(img_file.read()).decode()
 
-    # Links
     linkedin_url = "https://www.linkedin.com/in/akhilaakkala/"
     github_url = f"https://github.com/{GITHUB_OWNER}"
     contact_html = make_hyperlinked_contact(resume.get("contact_line", ""), linkedin_url, github_url)
@@ -424,7 +396,7 @@ def main():
     else:
         card("Professional Summary", "No summary found in the resume.")
 
-    # SKILLS (chips by category)
+    # SKILLS
     section_anchor("skills")
     skills = resume.get("skills", {}) or {}
     if isinstance(skills, dict) and skills:
@@ -454,7 +426,7 @@ def main():
     else:
         st.info("No experience parsed yet. Make sure bullets start with • in the DOCX.")
 
-    # PUBLICATIONS (FIXED: list -> render)
+    # PUBLICATIONS
     section_anchor("publications")
     pubs = resume.get("publications", []) or []
     if isinstance(pubs, list) and pubs:
@@ -483,7 +455,7 @@ def main():
     projects_text = load_projects_from_github(GITHUB_OWNER, GITHUB_REPO, BRANCH, token)
     card("Projects", projects_text.replace("\n", "<br>"))
 
-    # ABOUT (load from GitHub)
+    # ABOUT
     section_anchor("about")
     about_txt = download_raw_text(GITHUB_OWNER, GITHUB_REPO, "aboutpage.txt", BRANCH, token)
     if about_txt:
