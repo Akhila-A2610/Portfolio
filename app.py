@@ -534,7 +534,7 @@ def main():
     # EXPERIENCE (logo-click)
     section_anchor("experience")
     exp = resume.get("experience", {}) or {}
-    render_work_experience_clickable(exp, COMPANY_LOGOS)
+    render_experience_with_logos(exp, COMPANY_LOGOS)
 
 
     # PUBLICATIONS
