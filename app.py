@@ -299,7 +299,6 @@ def css():
         font-size: 13px;
       }
 
-      a[id] { scroll-margin-top: 110px; }
     </style>
     """, unsafe_allow_html=True)
 
