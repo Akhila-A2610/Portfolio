@@ -207,40 +207,46 @@ def pick_company_key(job_header: str, logo_map: Dict[str, str]) -> Optional[str]
 
 
 def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str, str]):
-    """
-    Shows company logos as clickable cards/buttons.
-    Clicking one shows that job's bullets in an expander area.
-    """
     if "selected_job" not in st.session_state:
         st.session_state["selected_job"] = None
 
-    job_headers = list(experience.keys())
-    if not job_headers:
+    if not experience:
         st.info("No experience parsed.")
         return
 
-    # Build "company groups" (optional): pick the company key for each job header
+    st.markdown(
+        """
+        <div class="card">
+            <div style="font-size:20px;font-weight:800;">Work Experience</div>
+            <div class="muted">Click a company to view details.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     items = []
-    for jh in job_headers:
-        ck = pick_company_key(jh, logo_map)
-        logo_path = logo_map.get(ck) if ck else None
-        items.append((jh, ck, logo_path))
+    for job_header in experience.keys():
+        company_key = pick_company_key(job_header, logo_map)
+        logo_path = logo_map.get(company_key) if company_key else None
+        label = company_key if company_key else job_header
+        items.append((job_header, label, logo_path))
 
-    st.markdown("<div class='card'><div style='font-size:20px;font-weight:800;'>Work Experience</div><div class='muted'>Click a company to view details.</div></div>", unsafe_allow_html=True)
-
-    # show logos in a row (responsive-ish)
     cols = st.columns(min(4, len(items)))
-    for idx, (job_header, company_key, logo_path) in enumerate(items):
-        with cols[idx % len(cols)]:
-            if logo_path and os.path.exists(logo_path):
-                st.image(logo_path, width=90)
 
-            # Button label: company name if found, else shorten header
-            label = company_key if company_key else job_header[:28] + ("..." if len(job_header) > 28 else "")
-            if st.button(label, key=f"job_btn_{idx}"):
+    for idx, (job_header, label, logo_path) in enumerate(items):
+        with cols[idx % len(cols)]:
+            st.markdown("<div class='company-card'>", unsafe_allow_html=True)
+
+            if logo_path and os.path.exists(logo_path):
+                st.markdown("<div class='company-logo'>", unsafe_allow_html=True)
+                st.image(logo_path, width=90)
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            if st.button(label, key=f"job_btn_{idx}", use_container_width=True):
                 st.session_state["selected_job"] = job_header
 
-    # Show selected job details
+            st.markdown("</div>", unsafe_allow_html=True)
+
     selected = st.session_state.get("selected_job")
     if selected:
         bullets = experience.get(selected, [])
@@ -249,7 +255,7 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
                 st.markdown("\n".join([f"- {b}" for b in bullets]))
             else:
                 st.write("No bullet points found.")
-            if st.button("Close", key="close_job"):
+            if st.button("Close"):
                 st.session_state["selected_job"] = None
 
 
@@ -313,107 +319,121 @@ def make_hyperlinked_contact(contact_text: str, linkedin_url: str, github_url: s
 # UI helpers
 # ---------------------------
 def css():
-    st.markdown(
-        """
-<style>
-/* Hide Streamlit top chrome (new + old selectors) */
-header { visibility: hidden; height: 0px; }
-footer { visibility: hidden; height: 0px; }
-[data-testid="stHeader"] { display: none; }
-[data-testid="stToolbar"] { display: none; }
+    st.markdown("""
+    <style>
+    /* Hide Streamlit top chrome */
+    header { visibility: hidden; height: 0px; }
+    footer { visibility: hidden; height: 0px; }
+    [data-testid="stHeader"] { display: none; }
+    [data-testid="stToolbar"] { display: none; }
 
-/* Remove default top padding/blank space */
-.main .block-container { padding-top: 0rem !important; }
-section.main > div { padding-top: 0rem !important; }
-div.block-container { padding-top: 0rem !important; }
+    /* Remove default top padding/blank space */
+    .main .block-container { padding-top: 0rem !important; }
+    section.main > div { padding-top: 0rem !important; }
+    div.block-container { padding-top: 0rem !important; }
 
-/* IMPORTANT: prevent Streamlit from showing our HTML inside code-style containers */
-div[data-testid="stMarkdownContainer"] pre { display: none !important; }
+    /* Hide accidental code rendering */
+    div[data-testid="stMarkdownContainer"] pre { display: none !important; }
 
-/* Theme */
-.stApp { background-color: #0b0f19; color: white; }
-.muted { color: #b9c0d4; }
+    /* Theme */
+    .stApp { background-color: #0b0f19; color: white; }
+    .muted { color: #b9c0d4; }
 
-/* Sticky header */
-.sticky {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%;
-  background: rgba(11,15,25,0.96);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid rgba(135,206,250,0.75);
-  z-index: 9999;
-  padding: 14px 18px;
-}
+    /* Sticky header */
+    .sticky {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      background: rgba(11,15,25,0.96);
+      backdrop-filter: blur(10px);
+      border-bottom: 2px solid rgba(135,206,250,0.75);
+      z-index: 9999;
+      padding: 14px 18px;
+    }
 
-.header-row {
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap: 18px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+    .header-row {
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 18px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-.id-row { display:flex; align-items:center; gap:14px; min-width: 360px; }
+    .id-row { display:flex; align-items:center; gap:14px; min-width: 360px; }
 
-.avatar {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(135,206,250,0.75);
-}
+    .avatar {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(135,206,250,0.75);
+    }
 
-.nav {
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  justify-content:flex-end;
-  padding-top:6px;
-  max-width:560px;
-}
+    .nav {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      justify-content:flex-end;
+      padding-top:6px;
+      max-width:560px;
+    }
 
-.nav a {
-  background:#11a9c0;
-  color:white !important;
-  text-decoration:none !important;
-  padding:10px 14px;
-  border-radius:8px;
-  font-weight:800;
-  font-size:14px;
-  white-space:nowrap;
-}
-.nav a:hover { background:#02839a; }
+    .nav a {
+      background:#11a9c0;
+      color:white !important;
+      text-decoration:none !important;
+      padding:10px 14px;
+      border-radius:8px;
+      font-weight:800;
+      font-size:14px;
+      white-space:nowrap;
+    }
+    .nav a:hover { background:#02839a; }
 
-/* Spacer pushes content below sticky header */
-.spacer { height: 155px; }
+    /* ---- Work Experience clickable cards ---- */
+    .company-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
 
-/* Anchors won't hide under sticky header */
-a[id] { scroll-margin-top: 175px; }
+    .company-logo {
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+    }
 
-/* Cards */
-.card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  padding: 18px;
-  margin: 12px 0;
-}
-.chip {
-  display:inline-block;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(135,206,250,0.12);
-  border: 1px solid rgba(135,206,250,0.25);
-  margin: 4px 6px 0 0;
-  font-size: 13px;
-}
-</style>
-""",
-        unsafe_allow_html=True,
-    )
+    /* IMPORTANT: style Streamlit buttons to match top nav */
+    div[data-testid="stButton"] > button {
+      background:#11a9c0 !important;
+      color:white !important;
+      border: none !important;
+      border-radius:10px !important;
+      padding:10px 16px !important;
+      font-weight:800 !important;
+      font-size:14px !important;
+      width: 100% !important;
+    }
+    div[data-testid="stButton"] > button:hover {
+      background:#02839a !important;
+    }
 
+    /* Spacer pushes content below sticky header */
+    .spacer { height: 155px; }
+    a[id] { scroll-margin-top: 175px; }
+
+    /* Cards */
+    .card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 18px;
+      margin: 12px 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     avatar_html = ""
