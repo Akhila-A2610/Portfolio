@@ -485,6 +485,16 @@ def card(title: str, body_html: str):
         unsafe_allow_html=True,
     )
 
+#########
+def load_publications_from_github(owner: str, repo: str, branch: str="main", token: Optional[str]=None) -> list[dict]:
+    path = "publications.json"
+    b = download_raw_file(owner, repo, path, branch, token)
+    if not b:
+        return []
+    import json
+    return json.loads(b.decode("utf-8"))
+
+
 
 # ---------------------------
 # Main app
@@ -559,19 +569,22 @@ def main():
 
     # PUBLICATIONS
     section_anchor("publications")
-    pubs = resume.get("publications", []) or []
-    if isinstance(pubs, list) and pubs:
-        card("Publications", "<br>".join([f"• {p}" for p in pubs]))
-    else:
-        card("Publications", "No publications found.")
+    pubs = load_publications_from_github(GITHUB_OWNER, GITHUB_REPO, BRANCH, token)
 
-    # CERTIFICATIONS
-    section_anchor("certs")
-    certs = resume.get("certifications", []) or []
-    if certs:
-        card("Certifications", "<br>".join([f"• {c}" for c in certs]))
-    else:
-        card("Certifications", "No certifications found.")
+    if pubs:
+        items = []
+        for p in pubs:
+            title = p.get("title","").strip()
+            venue = p.get("venue","").strip()
+            url = p.get("url","").strip()
+            if url:
+                items.append(f"• <a href='{url}' target='_blank' style='color:#87CEFA;text-decoration:none;'><b>{title}  </b></a><br><span class='muted'>{venue}</span>")
+            else:
+                items.append(f"• <b>{title}</b><br><span class='muted'>{venue}</span>")
+        card("Publications", "<br><br>".join(items))
+     else:
+        card("Publications", "No publications found (publications.json missing or empty).")
+
 
     # EDUCATION
     section_anchor("education")
