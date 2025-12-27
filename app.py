@@ -360,8 +360,6 @@ def css():
         unsafe_allow_html=True
     )
 
-
-
 def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     avatar_html = ""
     if profile_img_b64:
@@ -374,7 +372,7 @@ def render_sticky_header(name, role, contact_html, profile_img_b64=None):
           {avatar_html}
           <div>
             <div style="font-size:34px;font-weight:900;color:gold;line-height:1;">{name}</div>
-            <div style="font-size:22px;font-weight:900;color:limegreen;line-height:1.15;">{role}</div>
+            <div style="font-size:26px;font-weight:900;color:limegreen;line-height:1.1;">{role}</div>
             <div class="muted" style="margin-top:6px;font-size:15px;">{contact_html}</div>
           </div>
         </div>
