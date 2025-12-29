@@ -457,7 +457,7 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
         st.info("No experience parsed.")
         return
 
-    section_title("Work Experience", "Click a company to view details.")
+    section_title("Work Experience")  # no subtitle now
 
     items = []
     for job_header in experience.keys():
@@ -467,14 +467,21 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
         items.append((job_header, label, logo_path))
 
     cols = st.columns(min(4, len(items)))
+
     for idx, (job_header, label, logo_path) in enumerate(items):
         with cols[idx % len(cols)]:
             st.markdown("<div class='company-card'>", unsafe_allow_html=True)
 
+            # ✅ Use HTML img instead of st.image() to avoid white placeholders
             if logo_path and os.path.exists(logo_path):
-                st.markdown("<div class='company-logo'>", unsafe_allow_html=True)
-                st.image(logo_path, width=90)
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div class="company-logo">
+                        <img src="{logo_path}" style="width:90px;height:auto;display:block;border-radius:10px;" />
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             if st.button(label, key=f"job_btn_{idx}", use_container_width=True):
                 st.session_state["selected_job"] = job_header
@@ -489,8 +496,8 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
             st.markdown("\n".join([f"- {b}" for b in bullets]))
         else:
             st.write("No bullet points found.")
-        st.button("Close", key="close_job", on_click=lambda: st.session_state.update({"selected_job": None}))
-
+        if st.button("Close", key="close_job"):
+            st.session_state["selected_job"] = None
 
 # ---------------------------
 # Main app
