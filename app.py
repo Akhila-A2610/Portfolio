@@ -449,16 +449,65 @@ def section_title(title: str, subtitle: str = ""):
 # ---------------------------
 # Experience with logos (NO card wrapper)
 # ---------------------------
+
+def img_file_to_data_uri(path: str) -> Optional[str]:
+    if not path or not os.path.exists(path):
+        return None
+
+    ext = os.path.splitext(path)[1].lower()
+    mime = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".webp": "image/webp",
+        ".gif": "image/gif",
+        ".jfif": "image/jpeg",
+    }.get(ext, "image/png")
+
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("utf-8")
+
+    return f"data:{mime};base64,{b64}"
+
 def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str, str]):
+    # --- helper: match company name inside job header ---
+    def pick_company_key(job_header: str, logo_map: Dict[str, str]) -> Optional[str]:
+        j = (job_header or "").lower()
+        for k in logo_map.keys():
+            if k.lower() in j:
+                return k
+        return None
+
+    # --- helper: convert local image to base64 data URI (so HTML <img> works) ---
+    def img_file_to_data_uri(path: str) -> Optional[str]:
+        if not path or not os.path.exists(path):
+            return None
+
+        ext = os.path.splitext(path)[1].lower()
+        mime = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+            ".gif": "image/gif",
+            ".jfif": "image/jpeg",
+        }.get(ext, "image/png")
+
+        with open(path, "rb") as f:
+            b64 = base64.b64encode(f.read()).decode("utf-8")
+
+        return f"data:{mime};base64,{b64}"
+
     if "selected_job" not in st.session_state:
         st.session_state["selected_job"] = None
 
     if not experience:
-        st.info("No experience parsed.")
         return
 
-    section_title("Work Experience")  # no subtitle now
+    # Title (no card / no "click a company" text)
+    st.markdown("<h2 style='margin: 6px 0 14px 0;'>Work Experience</h2>", unsafe_allow_html=True)
 
+    # Build items (keep your current label behavior)
     items = []
     for job_header in experience.keys():
         company_key = pick_company_key(job_header, logo_map)
@@ -472,33 +521,36 @@ def render_experience_with_logos(experience: Dict[str, list], logo_map: Dict[str
         with cols[idx % len(cols)]:
             st.markdown("<div class='company-card'>", unsafe_allow_html=True)
 
-            # ✅ Use HTML img instead of st.image() to avoid white placeholders
-            if logo_path and os.path.exists(logo_path):
+            # Logo via base64 (prevents broken icon / white bar)
+            data_uri = img_file_to_data_uri(logo_path) if logo_path else None
+            if data_uri:
                 st.markdown(
                     f"""
                     <div class="company-logo">
-                        <img src="{logo_path}" style="width:90px;height:auto;display:block;border-radius:10px;" />
+                      <img src="{data_uri}"
+                           style="width:90px;height:90px;object-fit:contain;display:block;border-radius:14px;" />
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
+            # Button uses your CSS (blue background, white text)
             if st.button(label, key=f"job_btn_{idx}", use_container_width=True):
                 st.session_state["selected_job"] = job_header
 
             st.markdown("</div>", unsafe_allow_html=True)
 
+    # Details
     selected = st.session_state.get("selected_job")
     if selected:
         bullets = experience.get(selected, [])
-        st.markdown(f"**{selected}**")
-        if bullets:
-            st.markdown("\n".join([f"- {b}" for b in bullets]))
-        else:
-            st.write("No bullet points found.")
-        if st.button("Close", key="close_job"):
-            st.session_state["selected_job"] = None
-
+        with st.expander(selected, expanded=True):
+            if bullets:
+                st.markdown("\n".join([f"- {b}" for b in bullets]))
+            else:
+                st.write("No bullet points found.")
+            if st.button("Close", key="close_job"):
+                st.session_state["selected_job"] = None
 # ---------------------------
 # Main app
 # ---------------------------
