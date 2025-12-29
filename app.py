@@ -21,7 +21,7 @@ PROFILE_IMG = "assets/profile.jpg"
 COMPANY_LOGOS = {
     "Utah State University": "assets/company_logos/usu.jfif",
     "LTIMindtree": "assets/company_logos/ltimindtree.png",
-    "Tata Consultancy Services (TCS)": "assets/company_logos/tcs.jfif",
+    "Tata Consultancy Services": "assets/company_logos/tcs.jfif",
 }
 
 EDU_LOGOS = {
