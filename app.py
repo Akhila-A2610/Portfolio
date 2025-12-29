@@ -31,8 +31,8 @@ EDU_LOGOS = {
 
 CERT_LOGOS = {
     "Databricks Generative AI Fundamentals": "assets/certs_logos/databricks.png",
-    "Microsoft Azure Fundamentals": "assets/certs_logos/azure_fundamentals.png",
-    "Microsoft Azure Data Fundamentals": "assets/certs_logos/azure-data-fundamentals.png"
+    "Databricks Lakehouse Fundamentals": "assets/certs_logos/lakehouse-fundamentals.png",
+    "Microsoft Certified: Azure Data Fundamentals": "assets/certs_logos/azure-data-fundamentals.png"
 }
 
 LINKEDIN_USER = "akhilaa2610"
@@ -419,50 +419,46 @@ div[data-testid="stButton"] > button:hover {
 
 def render_certifications_as_icons(certs: list[str], cert_logo_map: Dict[str, str]):
     if not certs:
-        st.write("No certifications found.")
         return
 
-    if "selected_cert" not in st.session_state:
-        st.session_state["selected_cert"] = None
-
-    # Section title (NO card, NO box)
     st.markdown("<h2 style='margin: 6px 0 14px 0;'>Certifications</h2>", unsafe_allow_html=True)
 
-    cols = st.columns(min(4, len(certs)))
+    # Filter ONLY certifications that have logos
+    items = []
+    for cert in certs:
+        logo_path = pick_cert_logo(cert, cert_logo_map)
+        if logo_path and os.path.exists(logo_path):
+            items.append((cert, logo_path))
 
-    for idx, cert in enumerate(certs):
+    if not items:
+        st.write("No certification logos found.")
+        return
+
+    cols = st.columns(min(4, len(items)))
+
+    for idx, (cert, logo_path) in enumerate(items):
         with cols[idx % len(cols)]:
             st.markdown("<div class='company-card'>", unsafe_allow_html=True)
 
-            logo_path = pick_cert_logo(cert, cert_logo_map)
-            data_uri = img_file_to_data_uri(logo_path) if logo_path else None
-
+            data_uri = img_file_to_data_uri(logo_path)
             if data_uri:
                 st.markdown(
                     f"""
                     <div class="company-logo">
                         <img src="{data_uri}"
-                             style="width:90px;height:90px;object-fit:contain;border-radius:14px;" />
+                             style="width:90px;height:90px;
+                                    object-fit:contain;
+                                    border-radius:14px;" />
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
 
-            # Button like top nav (blue, white text)
-            short_label = cert[:28] + ("..." if len(cert) > 28 else "")
-            if st.button(short_label, key=f"cert_btn_{idx}", use_container_width=True):
-                st.session_state["selected_cert"] = cert
+            # Label under icon (same as Work Experience)
+            label = cert[:28] + ("..." if len(cert) > 28 else "")
+            st.button(label, key=f"cert_btn_{idx}", use_container_width=True)
 
             st.markdown("</div>", unsafe_allow_html=True)
-
-    # Show details on click (optional)
-    selected = st.session_state.get("selected_cert")
-    if selected:
-        st.markdown("---")
-        st.markdown(f"**{selected}**")
-        if st.button("Close", key="close_cert"):
-            st.session_state["selected_cert"] = None
-
 
 def render_sticky_header(name, role, contact_html, profile_img_b64=None):
     avatar_html = ""
