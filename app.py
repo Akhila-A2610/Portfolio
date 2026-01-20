@@ -12,7 +12,7 @@ st.set_page_config(page_title="Akhila — Portfolio", layout="wide")
 # CONFIG - CHANGE THESE
 # ---------------------------
 GITHUB_OWNER = "Akhila-A2610"
-GITHUB_REPO = "portfolio"
+GITHUB_REPO = "Portfolio"
 RESUME_PATH_IN_REPO = "Akhila_A_Resume.docx"
 BRANCH = "main"
 
