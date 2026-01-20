@@ -68,7 +68,6 @@ def download_raw_text(
 
 # ---------------------------
 # Parse .docx (resume)
-#   NOTE: Skills removed completely.
 # ---------------------------
 def parse_resume_docx_bytes(docx_bytes: bytes) -> Dict[str, Any]:
     doc = Document(io.BytesIO(docx_bytes))
@@ -299,7 +298,7 @@ def pick_cert_logo(cert_line: str, logo_map: Dict[str, str]) -> Optional[str]:
 
 
 # ---------------------------
-# UI helpers (NO cards)
+# UI helpers 
 # ---------------------------
 def css():
     st.markdown(
@@ -503,7 +502,7 @@ def section_title(title: str, subtitle: str = ""):
 
 
 # ---------------------------
-# Experience with logos (NO card wrapper)
+# Experience with logos 
 # ---------------------------
 
 def img_file_to_data_uri(path: str) -> Optional[str]:
@@ -614,7 +613,7 @@ def main():
     css()
 
     with st.sidebar:
-        if st.button("🔄 Refresh / Clear cache"):
+        if st.button(" Refresh / Clear cache"):
             st.cache_data.clear()
             st.rerun()
 
