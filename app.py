@@ -20,8 +20,12 @@ BRANCH = "main"
 PROFILE_IMG = "assets/profile.jpg"
 COMPANY_LOGOS = {
     "Utah State University": "assets/company_logos/usu.jfif",
-    "LTIMindtree": "assets/company_logos/ltimindtree.png",
-    "Tata Consultancy Services": "assets/company_logos/tcs.jfif",
+    # "LTIMindtree": "assets/company_logos/ltimindtree.png",
+    # "Tata Consultancy Services": "assets/company_logos/tcs.jfif",
+    "Hitachi": "assets/company_logos/hitachi.png",
+    "Western Union": "assets/company_logos/western union.png",
+    "GE Health Care": "assets/company_logos/gehealthcare.png",
+
 }
 
 EDU_LOGOS = {
