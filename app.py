@@ -24,7 +24,7 @@ COMPANY_LOGOS = {
     # "Tata Consultancy Services": "assets/company_logos/tcs.jfif",
     "Hitachi": "assets/company_logos/hitachi.png",
     "Western Union": "assets/company_logos/western union.png",
-    "GE Health Care": "assets/company_logos/gehealthcare.png",
+    "GE HealthCare": "assets/company_logos/gehealthcare.png",
 
 }
 
